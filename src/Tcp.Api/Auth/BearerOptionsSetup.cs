@@ -21,6 +21,16 @@ public sealed class BearerOptionsSetup(ISigningKeyProvider keys, IOptions<OAuthO
 
         options.MapInboundClaims = false;
         options.RequireHttpsMetadata = false;
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                if (!Endpoints.Spi.SpiPaths.IsSpi(context.Request.Path)) return;
+                context.HandleResponse();
+                context.Response.Headers.WWWAuthenticate = context.AuthenticateFailure is null ? "Bearer" : "Bearer error=\"invalid_token\"";
+                await Endpoints.Spi.SpiErrors.WriteAsync(context.HttpContext, Domain.Tasks.SpiCodes.Unauthorized);
+            },
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

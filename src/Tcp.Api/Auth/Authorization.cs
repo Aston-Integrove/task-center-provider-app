@@ -53,9 +53,7 @@ public sealed class SpiAuthorizationResultHandler : IAuthorizationMiddlewareResu
         if (authorizeResult.Forbidden && SpiPaths.IsSpi(context.Request.Path))
         {
             var userContext = authorizeResult.AuthorizationFailure?.FailedRequirements.OfType<UserContextRequirement>().Any() == true;
-            await SpiErrors.WriteAsync(context, StatusCodes.Status403Forbidden,
-                userContext ? "tcp.auth.userContextRequired" : "tcp.auth.forbidden",
-                userContext ? "This operation requires a user context" : "Access denied");
+            await SpiErrors.WriteAsync(context, userContext ? Domain.Tasks.SpiCodes.UserContextRequired : Domain.Tasks.SpiCodes.Forbidden);
             return;
         }
 

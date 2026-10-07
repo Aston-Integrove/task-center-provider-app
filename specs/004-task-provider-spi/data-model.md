@@ -79,6 +79,6 @@ Child rows (recipients, groups, custom attributes, operation errors) are loaded 
 | `uiLink` | computed |
 | `customAttributes` | `TaskCustomAttribute` validated against definition |
 | `recipientUsers` | `TaskRecipientUser` ∩ active SCIM users ∪ {processor} |
-| `recipientGroups` | `TaskRecipientGroup` (null when empty) |
+| `recipientGroups` | `TaskRecipientGroup` (`[]` when empty — the SAP schema does not allow `null` here) |
 | `validResponseCodes`, `validActionCodes` | computed (spec US-004-4 #6–7) |
 | `operationErrors` | latest per user from `TaskOperationError` (omitted when none) |

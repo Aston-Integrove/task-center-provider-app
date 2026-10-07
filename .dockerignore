@@ -4,7 +4,12 @@
 .azure/
 tests/
 docs/
-specs/
 .claude/
 .specify/
 *.md
+
+# specs are not part of the image, except the seed task definitions the app loads at startup
+specs/*
+!specs/004-task-provider-spi
+specs/004-task-provider-spi/*
+!specs/004-task-provider-spi/seed

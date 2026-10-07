@@ -11,6 +11,12 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         var correlationId = CorrelationIdMiddleware.Get(httpContext);
         logger.LogError(exception, "Unhandled exception (correlation {CorrelationId})", correlationId);
 
+        if (Endpoints.Spi.SpiPaths.IsSpi(httpContext.Request.Path))
+        {
+            await Endpoints.Spi.SpiErrors.WriteAsync(httpContext, Domain.Tasks.SpiCodes.InternalError);
+            return true;
+        }
+
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
         await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
         {

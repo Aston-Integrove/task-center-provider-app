@@ -40,3 +40,22 @@ public sealed class AdminOptions
     /// <summary>Admin password. In Azure this comes from the Key Vault secret <c>admin-password</c>.</summary>
     public string Password { get; set; } = "";
 }
+
+public sealed class SpiOptions
+{
+    public const string Section = "Spi";
+
+    /// <summary>Seed the task definitions at startup (after migrations).</summary>
+    public bool SeedOnStartup { get; set; } = true;
+
+    /// <summary>Seed file, relative to the application base directory.</summary>
+    public string SeedFile { get; set; } = "Seed/task-definitions.json";
+
+    /// <summary>P3: answer POST /response with 202 and complete it in the background.</summary>
+    public bool AsyncResponses { get; set; }
+
+    public int AsyncDelaySeconds { get; set; } = 2;
+
+    /// <summary>With AsyncResponses: response codes that fail and surface as operationErrors.</summary>
+    public List<string> SimulateFailureCodes { get; set; } = [];
+}

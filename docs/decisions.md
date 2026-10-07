@@ -37,7 +37,8 @@ Status key: **Accepted** · Proposed · Superseded
 - `azd up` for first provisioning; GitHub Actions with OIDC federated credential (`azure/login`) runs `azd deploy` on `main`.
 
 ## ADR-009 Task detail UI: `Default` — Accepted
-- Use `uiType: Default` + `/description` (HTML). IFrame embedding needs third-party cookies/SSO in an iframe and is deferred. `uiLink` points at `/app/tasks/{urn}` for "Open in App".
+- Use `uiType: Default` + `/description`. IFrame embedding needs third-party cookies/SSO in an iframe and is deferred. `uiLink` points at `/app/tasks/{urn}` for "Open in App".
+- **Amendment (spec 004 implementation):** `TaskProviderV2.json` defines `/description` as *plain text* (`text/plain; charset=utf-8`). Descriptions are authored as sanitised HTML and converted to plain text for the SPI; the HTML is rendered only by the provider's own `/app/tasks/{urn}` page.
 
 ## ADR-010 Claim/Release as definition actions — Accepted
 - `TaskProviderV2.json` has no global-operations endpoint, so `claim` and `release` are defined as `possibleActions` per definition with `validActionCodes` computed per task (`processor == null` ⇒ `claim`, else `release`).

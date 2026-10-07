@@ -9,8 +9,10 @@ using Tcp.Api.Endpoints.Admin;
 using Tcp.Api.Health;
 using Tcp.Api.Security;
 using Tcp.Api.Endpoints.Scim;
+using Tcp.Api.Endpoints.Spi;
 using Tcp.Infrastructure.Persistence;
 using Tcp.Infrastructure.Scim;
+using Tcp.Infrastructure.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +48,8 @@ builder.Services.AddTcpHealth();
 builder.Services.AddTcpAuth(config);
 builder.Services.Configure<ScimOptions>(config.GetSection(ScimOptions.Section));
 builder.Services.AddScimInfrastructure();
+builder.Services.AddTaskInfrastructure();
+builder.Services.AddSpi(config);
 
 var app = builder.Build();
 
@@ -57,6 +61,24 @@ if (config.GetSection(DatabaseOptions.Section).Get<DatabaseOptions>()?.MigrateOn
     var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
     app.Logger.LogInformation("Applying {Count} pending migration(s): {Migrations}", pending.Count, string.Join(", ", pending));
     await db.Database.MigrateAsync();
+
+    var spi = config.GetSection(SpiOptions.Section).Get<SpiOptions>() ?? new SpiOptions();
+    if (spi.SeedOnStartup)
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, spi.SeedFile);
+        if (File.Exists(path))
+        {
+            var provider = config.GetSection(ProviderOptions.Section).Get<ProviderOptions>() ?? new ProviderOptions();
+            await scope.ServiceProvider.GetRequiredService<DefinitionSeeder>().SeedAsync(
+                await File.ReadAllTextAsync(path),
+                new ProviderIdentity(provider.ApplicationId, provider.ApplicationInstanceId, provider.TenantId),
+                CancellationToken.None);
+        }
+        else
+        {
+            app.Logger.LogWarning("Task definition seed file {Path} not found; no definitions were seeded", path);
+        }
+    }
 }
 
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -71,6 +93,7 @@ app.MapTcpHealth();
 app.MapOAuthDiscovery();
 app.MapTokenEndpoint();
 app.MapScim();
+app.MapSpi();
 app.MapAdminApi().MapAdminDiagnostics();
 foreach (var module in app.Services.GetServices<IEndpointModule>()) module.Map(app);
 

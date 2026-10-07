@@ -43,6 +43,22 @@ public sealed class OpenApiContract
         return Validate(schemaNode, body);
     }
 
+    /// <summary>True when the contract lists <paramref name="status"/> (or a default) for the operation.</summary>
+    public bool Declares(string pathTemplate, string method, int status)
+    {
+        var responses = FindOperation(pathTemplate, method)["responses"] as JsonObject;
+        return responses is not null &&
+               (responses.ContainsKey(status.ToString(CultureInfo.InvariantCulture)) || responses.ContainsKey("default"));
+    }
+
+    /// <summary>Media types the contract declares for a response (empty when it declares no body).</summary>
+    public IReadOnlyList<string> ContentTypes(string pathTemplate, string method, int status)
+    {
+        var responses = FindOperation(pathTemplate, method)["responses"] as JsonObject;
+        var response = responses?[status.ToString(CultureInfo.InvariantCulture)] as JsonObject;
+        return (response?["content"] as JsonObject)?.Select(c => c.Key).ToList() ?? [];
+    }
+
     public IReadOnlyList<string> ValidateRequest(string pathTemplate, string method, string body)
     {
         var operation = FindOperation(pathTemplate, method);

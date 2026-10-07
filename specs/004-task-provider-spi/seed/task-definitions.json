@@ -4,96 +4,613 @@
     {
       "localId": "PR_APPROVAL",
       "name": [
-        { "languageCode": "en-US", "text": "Approve Purchase Requisition" },
-        { "languageCode": "de-DE", "text": "Bestellanforderung genehmigen" }
+        {
+          "languageCode": "en-US",
+          "text": "Approve Purchase Requisition"
+        },
+        {
+          "languageCode": "de-DE",
+          "text": "Bestellanforderung genehmigen"
+        }
       ],
       "possibleResponses": [
         {
           "code": "approve",
-          "name": [ { "languageCode": "en-US", "text": "Approve" }, { "languageCode": "de-DE", "text": "Genehmigen" } ],
-          "nature": "POSITIVE", "commentRequired": "OPTIONAL", "reasonRequired": "UNSUPPORTED", "possibleReasons": [],
-          "capabilities": [ { "name": "tasks.bulk.operations", "value": false } ]
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Approve"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Genehmigen"
+            }
+          ],
+          "nature": "POSITIVE",
+          "commentRequired": "OPTIONAL",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": [],
+          "capabilities": [
+            {
+              "name": "tasks.bulk.operations",
+              "value": false
+            }
+          ]
         },
         {
           "code": "reject",
-          "name": [ { "languageCode": "en-US", "text": "Reject" }, { "languageCode": "de-DE", "text": "Ablehnen" } ],
-          "nature": "NEGATIVE", "commentRequired": "REQUIRED", "reasonRequired": "OPTIONAL",
-          "possibleReasons": [
-            { "code": "budget", "name": [ { "languageCode": "en-US", "text": "Insufficient budget" }, { "languageCode": "de-DE", "text": "Budget nicht ausreichend" } ] },
-            { "code": "duplicate", "name": [ { "languageCode": "en-US", "text": "Duplicate request" }, { "languageCode": "de-DE", "text": "Doppelte Anforderung" } ] },
-            { "code": "other", "name": [ { "languageCode": "en-US", "text": "Other" }, { "languageCode": "de-DE", "text": "Sonstiges" } ] }
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Reject"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Ablehnen"
+            }
           ],
-          "capabilities": [ { "name": "tasks.bulk.operations", "value": false } ]
-        }
-      ],
-      "possibleActions": [
-        { "code": "claim", "name": [ { "languageCode": "en-US", "text": "Claim" }, { "languageCode": "de-DE", "text": "Übernehmen" } ], "nature": "NEUTRAL", "commentRequired": "UNSUPPORTED", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] },
-        { "code": "release", "name": [ { "languageCode": "en-US", "text": "Release" }, { "languageCode": "de-DE", "text": "Freigeben" } ], "nature": "NEUTRAL", "commentRequired": "UNSUPPORTED", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] },
-        { "code": "increasePriority", "name": [ { "languageCode": "en-US", "text": "Increase priority" }, { "languageCode": "de-DE", "text": "Priorität erhöhen" } ], "nature": "NEUTRAL", "commentRequired": "OPTIONAL", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] }
-      ],
-      "customAttributes": [
-        { "code": "amount", "type": "FLOAT", "rank": 100, "name": [ { "languageCode": "en-US", "text": "Amount" }, { "languageCode": "de-DE", "text": "Betrag" } ] },
-        { "code": "currency", "type": "STRING", "rank": 90, "name": [ { "languageCode": "en-US", "text": "Currency" }, { "languageCode": "de-DE", "text": "Währung" } ] },
-        { "code": "requester", "type": "STRING", "rank": 80, "name": [ { "languageCode": "en-US", "text": "Requester" }, { "languageCode": "de-DE", "text": "Anforderer" } ] },
-        { "code": "costCenter", "type": "STRING", "rank": 70, "name": [ { "languageCode": "en-US", "text": "Cost Center" }, { "languageCode": "de-DE", "text": "Kostenstelle" } ] },
-        { "code": "neededBy", "type": "DATE", "rank": 60, "name": [ { "languageCode": "en-US", "text": "Needed By" }, { "languageCode": "de-DE", "text": "Benötigt bis" } ] }
-      ],
-      "capabilities": [ { "name": "tasks.description", "value": true } ],
-      "taskDetailsSettings": { "webUISettings": { "uiType": "Default" }, "mobileUISettings": { "uiType": "Default" } }
-    },
-    {
-      "localId": "LEAVE_APPROVAL",
-      "name": [
-        { "languageCode": "en-US", "text": "Approve Leave Request" },
-        { "languageCode": "de-DE", "text": "Urlaubsantrag genehmigen" }
-      ],
-      "possibleResponses": [
-        { "code": "approve", "name": [ { "languageCode": "en-US", "text": "Approve" }, { "languageCode": "de-DE", "text": "Genehmigen" } ], "nature": "POSITIVE", "commentRequired": "OPTIONAL", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] },
-        { "code": "reject", "name": [ { "languageCode": "en-US", "text": "Reject" }, { "languageCode": "de-DE", "text": "Ablehnen" } ], "nature": "NEGATIVE", "commentRequired": "OPTIONAL", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] }
-      ],
-      "possibleActions": [
-        { "code": "claim", "name": [ { "languageCode": "en-US", "text": "Claim" }, { "languageCode": "de-DE", "text": "Übernehmen" } ], "nature": "NEUTRAL", "commentRequired": "UNSUPPORTED", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] },
-        { "code": "release", "name": [ { "languageCode": "en-US", "text": "Release" }, { "languageCode": "de-DE", "text": "Freigeben" } ], "nature": "NEUTRAL", "commentRequired": "UNSUPPORTED", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] }
-      ],
-      "customAttributes": [
-        { "code": "leaveType", "type": "STRING", "rank": 100, "name": [ { "languageCode": "en-US", "text": "Leave Type" }, { "languageCode": "de-DE", "text": "Abwesenheitsart" } ] },
-        { "code": "fromDate", "type": "DATE", "rank": 90, "name": [ { "languageCode": "en-US", "text": "From" }, { "languageCode": "de-DE", "text": "Von" } ] },
-        { "code": "toDate", "type": "DATE", "rank": 80, "name": [ { "languageCode": "en-US", "text": "To" }, { "languageCode": "de-DE", "text": "Bis" } ] },
-        { "code": "days", "type": "INTEGER", "rank": 70, "name": [ { "languageCode": "en-US", "text": "Days" }, { "languageCode": "de-DE", "text": "Tage" } ] }
-      ],
-      "capabilities": [ { "name": "tasks.description", "value": true } ],
-      "taskDetailsSettings": { "webUISettings": { "uiType": "Default" }, "mobileUISettings": { "uiType": "Default" } }
-    },
-    {
-      "localId": "INVOICE_EXCEPTION",
-      "name": [
-        { "languageCode": "en-US", "text": "Resolve Invoice Exception" },
-        { "languageCode": "de-DE", "text": "Rechnungsausnahme klären" }
-      ],
-      "possibleResponses": [
-        { "code": "accept", "name": [ { "languageCode": "en-US", "text": "Accept Variance" }, { "languageCode": "de-DE", "text": "Abweichung akzeptieren" } ], "nature": "POSITIVE", "commentRequired": "OPTIONAL", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] },
-        {
-          "code": "return", "name": [ { "languageCode": "en-US", "text": "Return to Vendor" }, { "languageCode": "de-DE", "text": "An Lieferanten zurück" } ],
-          "nature": "NEGATIVE", "commentRequired": "OPTIONAL", "reasonRequired": "REQUIRED",
+          "nature": "NEGATIVE",
+          "commentRequired": "REQUIRED",
+          "reasonRequired": "OPTIONAL",
           "possibleReasons": [
-            { "code": "price", "name": [ { "languageCode": "en-US", "text": "Price variance" }, { "languageCode": "de-DE", "text": "Preisabweichung" } ] },
-            { "code": "quantity", "name": [ { "languageCode": "en-US", "text": "Quantity variance" }, { "languageCode": "de-DE", "text": "Mengenabweichung" } ] }
+            {
+              "code": "budget",
+              "name": [
+                {
+                  "languageCode": "en-US",
+                  "text": "Insufficient budget"
+                },
+                {
+                  "languageCode": "de-DE",
+                  "text": "Budget nicht ausreichend"
+                }
+              ]
+            },
+            {
+              "code": "duplicate",
+              "name": [
+                {
+                  "languageCode": "en-US",
+                  "text": "Duplicate request"
+                },
+                {
+                  "languageCode": "de-DE",
+                  "text": "Doppelte Anforderung"
+                }
+              ]
+            },
+            {
+              "code": "other",
+              "name": [
+                {
+                  "languageCode": "en-US",
+                  "text": "Other"
+                },
+                {
+                  "languageCode": "de-DE",
+                  "text": "Sonstiges"
+                }
+              ]
+            }
+          ],
+          "capabilities": [
+            {
+              "name": "tasks.bulk.operations",
+              "value": false
+            }
           ]
         }
       ],
       "possibleActions": [
-        { "code": "claim", "name": [ { "languageCode": "en-US", "text": "Claim" }, { "languageCode": "de-DE", "text": "Übernehmen" } ], "nature": "NEUTRAL", "commentRequired": "UNSUPPORTED", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] },
-        { "code": "release", "name": [ { "languageCode": "en-US", "text": "Release" }, { "languageCode": "de-DE", "text": "Freigeben" } ], "nature": "NEUTRAL", "commentRequired": "UNSUPPORTED", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] },
-        { "code": "increasePriority", "name": [ { "languageCode": "en-US", "text": "Increase priority" }, { "languageCode": "de-DE", "text": "Priorität erhöhen" } ], "nature": "NEUTRAL", "commentRequired": "OPTIONAL", "reasonRequired": "UNSUPPORTED", "possibleReasons": [] }
+        {
+          "code": "claim",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Claim"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Übernehmen"
+            }
+          ],
+          "nature": "NEUTRAL",
+          "commentRequired": "UNSUPPORTED",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        },
+        {
+          "code": "release",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Release"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Freigeben"
+            }
+          ],
+          "nature": "NEUTRAL",
+          "commentRequired": "UNSUPPORTED",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        },
+        {
+          "code": "increasePriority",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Increase priority"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Priorität erhöhen"
+            }
+          ],
+          "nature": "NEUTRAL",
+          "commentRequired": "OPTIONAL",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        }
       ],
       "customAttributes": [
-        { "code": "vendor", "type": "STRING", "rank": 100, "name": [ { "languageCode": "en-US", "text": "Vendor" }, { "languageCode": "de-DE", "text": "Lieferant" } ] },
-        { "code": "invoiceNo", "type": "STRING", "rank": 90, "name": [ { "languageCode": "en-US", "text": "Invoice No." }, { "languageCode": "de-DE", "text": "Rechnungsnr." } ] },
-        { "code": "variance", "type": "FLOAT", "rank": 80, "name": [ { "languageCode": "en-US", "text": "Variance" }, { "languageCode": "de-DE", "text": "Abweichung" } ] },
-        { "code": "postingDate", "type": "DATE", "rank": 70, "name": [ { "languageCode": "en-US", "text": "Posting Date" }, { "languageCode": "de-DE", "text": "Buchungsdatum" } ] }
+        {
+          "code": "amount",
+          "type": "FLOAT",
+          "rank": 100,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Amount"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Betrag"
+            }
+          ]
+        },
+        {
+          "code": "currency",
+          "type": "STRING",
+          "rank": 90,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Currency"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Währung"
+            }
+          ]
+        },
+        {
+          "code": "requester",
+          "type": "STRING",
+          "rank": 80,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Requester"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Anforderer"
+            }
+          ]
+        },
+        {
+          "code": "costCenter",
+          "type": "STRING",
+          "rank": 70,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Cost Center"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Kostenstelle"
+            }
+          ]
+        },
+        {
+          "code": "neededBy",
+          "type": "DATE",
+          "rank": 60,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Needed By"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Benötigt bis"
+            }
+          ]
+        }
       ],
-      "capabilities": [ { "name": "tasks.description", "value": true } ],
-      "taskDetailsSettings": { "webUISettings": { "uiType": "Default" }, "mobileUISettings": { "uiType": "Default" } }
+      "capabilities": [
+        {
+          "name": "tasks.description",
+          "value": true
+        }
+      ],
+      "taskDetailsSettings": {
+        "webUISettings": {
+          "uiType": "Default"
+        },
+        "mobileUISettings": {
+          "uiType": "Default"
+        }
+      }
+    },
+    {
+      "localId": "LEAVE_APPROVAL",
+      "name": [
+        {
+          "languageCode": "en-US",
+          "text": "Approve Leave Request"
+        },
+        {
+          "languageCode": "de-DE",
+          "text": "Urlaubsantrag genehmigen"
+        }
+      ],
+      "possibleResponses": [
+        {
+          "code": "approve",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Approve"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Genehmigen"
+            }
+          ],
+          "nature": "POSITIVE",
+          "commentRequired": "OPTIONAL",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        },
+        {
+          "code": "reject",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Reject"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Ablehnen"
+            }
+          ],
+          "nature": "NEGATIVE",
+          "commentRequired": "OPTIONAL",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        }
+      ],
+      "possibleActions": [
+        {
+          "code": "claim",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Claim"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Übernehmen"
+            }
+          ],
+          "nature": "NEUTRAL",
+          "commentRequired": "UNSUPPORTED",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        },
+        {
+          "code": "release",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Release"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Freigeben"
+            }
+          ],
+          "nature": "NEUTRAL",
+          "commentRequired": "UNSUPPORTED",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        }
+      ],
+      "customAttributes": [
+        {
+          "code": "leaveType",
+          "type": "STRING",
+          "rank": 100,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Leave Type"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Abwesenheitsart"
+            }
+          ]
+        },
+        {
+          "code": "fromDate",
+          "type": "DATE",
+          "rank": 90,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "From"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Von"
+            }
+          ]
+        },
+        {
+          "code": "toDate",
+          "type": "DATE",
+          "rank": 80,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "To"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Bis"
+            }
+          ]
+        },
+        {
+          "code": "days",
+          "type": "INTEGER",
+          "rank": 70,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Days"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Tage"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "name": "tasks.description",
+          "value": true
+        }
+      ],
+      "taskDetailsSettings": {
+        "webUISettings": {
+          "uiType": "Default"
+        },
+        "mobileUISettings": {
+          "uiType": "Default"
+        }
+      }
+    },
+    {
+      "localId": "INVOICE_EXCEPTION",
+      "name": [
+        {
+          "languageCode": "en-US",
+          "text": "Resolve Invoice Exception"
+        },
+        {
+          "languageCode": "de-DE",
+          "text": "Rechnungsausnahme klären"
+        }
+      ],
+      "possibleResponses": [
+        {
+          "code": "accept",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Accept Variance"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Abweichung akzeptieren"
+            }
+          ],
+          "nature": "POSITIVE",
+          "commentRequired": "OPTIONAL",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        },
+        {
+          "code": "return",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Return to Vendor"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "An Lieferanten zurück"
+            }
+          ],
+          "nature": "NEGATIVE",
+          "commentRequired": "OPTIONAL",
+          "reasonRequired": "REQUIRED",
+          "possibleReasons": [
+            {
+              "code": "price",
+              "name": [
+                {
+                  "languageCode": "en-US",
+                  "text": "Price variance"
+                },
+                {
+                  "languageCode": "de-DE",
+                  "text": "Preisabweichung"
+                }
+              ]
+            },
+            {
+              "code": "quantity",
+              "name": [
+                {
+                  "languageCode": "en-US",
+                  "text": "Quantity variance"
+                },
+                {
+                  "languageCode": "de-DE",
+                  "text": "Mengenabweichung"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "possibleActions": [
+        {
+          "code": "claim",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Claim"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Übernehmen"
+            }
+          ],
+          "nature": "NEUTRAL",
+          "commentRequired": "UNSUPPORTED",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        },
+        {
+          "code": "release",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Release"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Freigeben"
+            }
+          ],
+          "nature": "NEUTRAL",
+          "commentRequired": "UNSUPPORTED",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        },
+        {
+          "code": "increasePriority",
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Increase priority"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Priorität erhöhen"
+            }
+          ],
+          "nature": "NEUTRAL",
+          "commentRequired": "OPTIONAL",
+          "reasonRequired": "UNSUPPORTED",
+          "possibleReasons": []
+        }
+      ],
+      "customAttributes": [
+        {
+          "code": "vendor",
+          "type": "STRING",
+          "rank": 100,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Vendor"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Lieferant"
+            }
+          ]
+        },
+        {
+          "code": "invoiceNo",
+          "type": "STRING",
+          "rank": 90,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Invoice No."
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Rechnungsnr."
+            }
+          ]
+        },
+        {
+          "code": "variance",
+          "type": "FLOAT",
+          "rank": 80,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Variance"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Abweichung"
+            }
+          ]
+        },
+        {
+          "code": "postingDate",
+          "type": "DATE",
+          "rank": 70,
+          "name": [
+            {
+              "languageCode": "en-US",
+              "text": "Posting Date"
+            },
+            {
+              "languageCode": "de-DE",
+              "text": "Buchungsdatum"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "name": "tasks.description",
+          "value": true
+        }
+      ],
+      "taskDetailsSettings": {
+        "webUISettings": {
+          "uiType": "Default"
+        },
+        "mobileUISettings": {
+          "uiType": "Default"
+        }
+      }
     }
   ]
 }

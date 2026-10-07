@@ -7,6 +7,8 @@ COPY src/Tcp.Infrastructure/Tcp.Infrastructure.csproj src/Tcp.Infrastructure/
 COPY src/Tcp.Api/Tcp.Api.csproj src/Tcp.Api/
 RUN dotnet restore src/Tcp.Api/Tcp.Api.csproj
 COPY src/ src/
+# Seed task definitions are linked into the app from the spec folder (single source of truth).
+COPY specs/004-task-provider-spi/seed/ specs/004-task-provider-spi/seed/
 RUN dotnet publish src/Tcp.Api/Tcp.Api.csproj -c Release -o /app --no-restore /p:UseAppHost=false
 
 # Chiseled = distroless, non-root (user "app"), no shell. "extra" adds ICU + tzdata.

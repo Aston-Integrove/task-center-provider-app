@@ -62,7 +62,7 @@ SPI base: `/task-provider/v2` **and** `/api/task-provider/v2` (R-03). All other 
 
 ### US-004-6 Task description (P1, MVP)
 **Acceptance**
-1. With a user token whose user is entitled (FR-SPI-AUTH), `GET /tasks/{urn}/description` with `Accept-Language: de-DE` returns `200 text/html; charset=utf-8` (or `text/plain` if the stored description is plain) and `Content-Language` of the actual language used (fallback default).
+1. With a user token whose user is entitled (FR-SPI-AUTH), `GET /tasks/{urn}/description` with `Accept-Language: de-DE` returns `200 text/plain; charset=utf-8` and `Content-Language` of the actual language used (fallback default). *Amended during implementation:* `TaskProviderV2.json` declares this endpoint as "Returns the plain text task description" (constitution I: the SAP contract wins), so descriptions authored as sanitised HTML are converted to plain text for the SPI (`HtmlText.ToPlainText`); the provider's own `/app/tasks/{urn}` page (spec 005) renders the HTML.
 2. Not entitled ⇒ `403 tcp.spi.notAuthorized`; unknown ⇒ `404`; technical token ⇒ `403 tcp.auth.userContextRequired`.
 3. HTML is sanitised on write (admin) — no scripts, inline event handlers or iframes.
 
@@ -94,7 +94,7 @@ SPI base: `/task-provider/v2` **and** `/api/task-provider/v2` (R-03). All other 
 - FR-SPI-AUTH Entitlement: user U may read description / act if `U ∈ recipientUsers` **or** U is member of a group in `recipientGroups`; and (`processor == null` **or** `processor == U`). Inactive/deleted users are never entitled.
 - FR-SPI-04 SAP `Error` body for all SPI 4xx/5xx: `{"error":{"code":"tcp.<area>.<reason>","message":"<localised>","target":null,"details":[]}}`. Messages localised for `en-US` and `de-DE` via resource files; fallback `en-US`.
 - FR-SPI-05 Unsupported optional endpoints of `TaskProviderV2.json` (`/bulkOperation`, `/details`, attachments, comments, `/configuration/push`) ⇒ `501 tcp.spi.notImplemented`.
-- FR-SPI-06 Responses use `application/json; charset=utf-8`; properties camelCase exactly as SAP schema; omit nulls **except** where SAP examples use explicit `null` (`processor`, `completedAt`, `dueAt`, `recipientGroups`) — serializer configured to write these explicitly.
+- FR-SPI-06 Responses use `application/json; charset=utf-8`; properties camelCase exactly as SAP schema; omit nulls **except** where SAP examples use explicit `null` and the schema marks the property nullable (`processor`, `completedAt`, `dueAt`, and `validResponseCodes` of open tasks) — written explicitly. `recipientGroups` is a non-nullable array in the SAP schema, so "no groups" is `[]` (found by the contract tests: an explicit `null` violated the contract).
 - FR-SPI-07 Seed data: definitions in `seed/task-definitions.json` loaded idempotently at startup (upsert by URN; definition changes bump nothing on tasks).
 - FR-SPI-08 Request/response logged via request log (spec 001).
 

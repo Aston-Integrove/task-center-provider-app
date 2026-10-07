@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="tcp.spi.invalidParameter" xml:space="preserve"><value>Der Parameter '{0}' fehlt oder ist ungültig.</value></data>
+  <data name="tcp.spi.taskDefinitionNotFound" xml:space="preserve"><value>Die Aufgabendefinition wurde nicht gefunden.</value></data>
+  <data name="tcp.spi.taskNotFound" xml:space="preserve"><value>Die Aufgabe wurde nicht gefunden.</value></data>
+  <data name="tcp.spi.descriptionNotFound" xml:space="preserve"><value>Diese Aufgabe hat keine Beschreibung.</value></data>
+  <data name="tcp.spi.commentRequired" xml:space="preserve"><value>Für diese Aktion ist ein Kommentar erforderlich.</value></data>
+  <data name="tcp.spi.reasonRequired" xml:space="preserve"><value>Für diese Aktion ist ein Grund erforderlich.</value></data>
+  <data name="tcp.spi.invalidReason" xml:space="preserve"><value>Der gewählte Grund ist für diese Aktion nicht gültig.</value></data>
+  <data name="tcp.spi.invalidOperation" xml:space="preserve"><value>Die Aktion ist für diese Aufgabe nicht definiert.</value></data>
+  <data name="tcp.spi.taskFinal" xml:space="preserve"><value>Die Aufgabe ist bereits abgeschlossen oder storniert.</value></data>
+  <data name="tcp.spi.actionNotValid" xml:space="preserve"><value>Die Aktion ist für die Aufgabe im aktuellen Zustand nicht zulässig.</value></data>
+  <data name="tcp.spi.reservedByOther" xml:space="preserve"><value>Die Aufgabe ist von einem anderen Benutzer reserviert.</value></data>
+  <data name="tcp.spi.notAuthorized" xml:space="preserve"><value>Sie sind nicht berechtigt, diese Aufgabe zu bearbeiten.</value></data>
+  <data name="tcp.spi.concurrentUpdate" xml:space="preserve"><value>Die Aufgabe wurde von jemand anderem geändert. Bitte aktualisieren Sie und versuchen Sie es erneut.</value></data>
+  <data name="tcp.spi.notImplemented" xml:space="preserve"><value>Diese Funktion wird von diesem Anbieter nicht unterstützt.</value></data>
+  <data name="tcp.spi.internalError" xml:space="preserve"><value>Ein unerwarteter Fehler ist aufgetreten.</value></data>
+  <data name="tcp.auth.userContextRequired" xml:space="preserve"><value>Für diese Aktion ist ein Benutzerkontext erforderlich.</value></data>
+  <data name="tcp.auth.forbidden" xml:space="preserve"><value>Zugriff verweigert.</value></data>
+  <data name="tcp.auth.unauthorized" xml:space="preserve"><value>Authentifizierung erforderlich.</value></data>
+</root>
