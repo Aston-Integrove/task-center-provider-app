@@ -1,0 +1,15 @@
+title = "tc-provider gitleaks config"
+
+[extend]
+useDefault = true
+
+# Reviewed false positives. Everything else (including future secrets) is still reported.
+[allowlist]
+description = "Public Azure built-in role definition GUIDs and the documented dev-only example credential"
+regexTarget = "line"
+regexes = [
+  # Azure built-in role definition ids (Key Vault Secrets User/Officer, AcrPull) are public constants, not secrets.
+  '''(secretsOfficer|secretsUser|acrPullRole)\s*=\s*'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\'''',
+  # README "Run locally": the Development-only admin password documented in appsettings.Development.json.
+  '''curl -u admin:dev-admin ''',
+]

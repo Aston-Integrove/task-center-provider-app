@@ -60,7 +60,8 @@ jobs:
         run: docker build -f src/Tcp.Api/Dockerfile -t tcp-api:ci .
       - name: Smoke test /healthz
         run: |
-          docker run -d --name tcp -p 8080:8080 tcp-api:ci
+          # No Key Vault in CI: allow an ephemeral token signing key so the Production-mode container can start.
+          docker run -d --name tcp -p 8080:8080 -e OAuth__AllowEphemeralSigningKey=true tcp-api:ci
           for i in $(seq 1 30); do
             code=$(curl -s -o /tmp/health.json -w '%{http_code}' http://localhost:8080/healthz || true)
             [ "$code" = "200" ] && break
