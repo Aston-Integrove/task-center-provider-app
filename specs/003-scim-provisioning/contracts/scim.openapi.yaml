@@ -1,0 +1,223 @@
+openapi: 3.0.3
+info:
+  title: Integrove TP — SCIM 2.0 (minimal subset for SAP Identity Provisioning)
+  version: 1.0.0
+  description: RFC 7643 / RFC 7644 subset. Users + Groups, filter, paging, PATCH. No bulk, sort, ETag.
+servers:
+  - url: /scim/v2
+security:
+  - bearer: [scim]
+  - basic: []
+paths:
+  /ServiceProviderConfig:
+    get:
+      operationId: getServiceProviderConfig
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { type: object } } } }
+  /ResourceTypes:
+    get:
+      operationId: getResourceTypes
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/ListResponse' } } } }
+  /Schemas:
+    get:
+      operationId: getSchemas
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/ListResponse' } } } }
+  /Users:
+    get:
+      operationId: listUsers
+      parameters:
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/startIndex'
+        - $ref: '#/components/parameters/count'
+        - $ref: '#/components/parameters/attributes'
+        - $ref: '#/components/parameters/excludedAttributes'
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/ListResponse' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createUser
+      requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/User' } }, application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+      responses:
+        '201':
+          description: Created
+          headers: { Location: { schema: { type: string } } }
+          content: { application/scim+json: { schema: { $ref: '#/components/schemas/User' } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /Users/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getUser
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '404': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: replaceUser
+      requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/User' } } } }
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+    patch:
+      operationId: patchUser
+      requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/PatchOp' } } } }
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '204': { description: No content (when configured) }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+    delete:
+      operationId: deleteUser
+      responses:
+        '204': { description: Deleted (soft delete + GDPR anonymisation) }
+        '404': { $ref: '#/components/responses/Error' }
+  /Groups:
+    get:
+      operationId: listGroups
+      parameters:
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/startIndex'
+        - $ref: '#/components/parameters/count'
+        - $ref: '#/components/parameters/excludedAttributes'
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/ListResponse' } } } }
+    post:
+      operationId: createGroup
+      requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
+      responses:
+        '201': { description: Created, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
+        '409': { $ref: '#/components/responses/Error' }
+  /Groups/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getGroup
+      parameters: [ { $ref: '#/components/parameters/excludedAttributes' } ]
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
+        '404': { $ref: '#/components/responses/Error' }
+    put:
+      operationId: replaceGroup
+      requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
+    patch:
+      operationId: patchGroup
+      requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/PatchOp' } } } }
+      responses:
+        '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
+        '204': { description: No content (when configured) }
+    delete:
+      operationId: deleteGroup
+      responses:
+        '204': { description: Deleted }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+    basic: { type: http, scheme: basic }
+  parameters:
+    filter: { name: filter, in: query, schema: { type: string }, example: 'userName eq "jdoe"' }
+    startIndex: { name: startIndex, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    count: { name: count, in: query, schema: { type: integer, minimum: 0, maximum: 1000, default: 100 } }
+    attributes: { name: attributes, in: query, schema: { type: string } }
+    excludedAttributes: { name: excludedAttributes, in: query, schema: { type: string } }
+  responses:
+    Error:
+      description: SCIM error
+      content:
+        application/scim+json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Meta:
+      type: object
+      properties:
+        resourceType: { type: string, enum: [User, Group] }
+        created: { type: string, format: date-time }
+        lastModified: { type: string, format: date-time }
+        location: { type: string, format: uri }
+    User:
+      type: object
+      required: [schemas, userName]
+      additionalProperties: true
+      properties:
+        schemas: { type: array, items: { type: string } }
+        id: { type: string, readOnly: true }
+        externalId: { type: string }
+        userName: { type: string }
+        displayName: { type: string }
+        name:
+          type: object
+          properties:
+            givenName: { type: string }
+            familyName: { type: string }
+            formatted: { type: string }
+        emails:
+          type: array
+          items:
+            type: object
+            properties:
+              value: { type: string }
+              type: { type: string }
+              primary: { type: boolean }
+        active: { type: boolean, default: true }
+        urn:ietf:params:scim:schemas:extension:sap:2.0:User:
+          type: object
+          additionalProperties: true
+          properties:
+            userUuid: { type: string, description: IAS Global User ID }
+            userId: { type: string }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Group:
+      type: object
+      required: [schemas, displayName]
+      additionalProperties: true
+      properties:
+        schemas: { type: array, items: { type: string } }
+        id: { type: string, readOnly: true }
+        externalId: { type: string }
+        displayName: { type: string }
+        members:
+          type: array
+          items:
+            type: object
+            required: [value]
+            properties:
+              value: { type: string }
+              display: { type: string }
+              $ref: { type: string }
+        meta: { $ref: '#/components/schemas/Meta' }
+    PatchOp:
+      type: object
+      required: [schemas, Operations]
+      properties:
+        schemas: { type: array, items: { type: string, enum: ['urn:ietf:params:scim:api:messages:2.0:PatchOp'] } }
+        Operations:
+          type: array
+          items:
+            type: object
+            required: [op]
+            properties:
+              op: { type: string, description: 'add | replace | remove (case-insensitive)' }
+              path: { type: string }
+              value: {}
+    ListResponse:
+      type: object
+      required: [schemas, totalResults, Resources]
+      properties:
+        schemas: { type: array, items: { type: string, enum: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'] } }
+        totalResults: { type: integer }
+        startIndex: { type: integer }
+        itemsPerPage: { type: integer }
+        Resources: { type: array, items: { type: object } }
+    Error:
+      type: object
+      required: [schemas, status]
+      properties:
+        schemas: { type: array, items: { type: string, enum: ['urn:ietf:params:scim:api:messages:2.0:Error'] } }
+        status: { type: string }
+        scimType: { type: string, enum: [invalidFilter, tooMany, uniqueness, mutability, invalidSyntax, invalidPath, noTarget, invalidValue, invalidVers, sensitive] }
+        detail: { type: string }

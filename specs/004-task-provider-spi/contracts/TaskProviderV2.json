@@ -1,0 +1,3170 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "SAP Task Center Service Provider Interface",
+    "description": "SAP Advanced Financial Closing provides a public API exposing Task Center Service Provider Interface. Task Center is an infrastructure service enabling business users to manage all their workflow tasks at one place by integrating tasks from multiple SAP applications.",
+    "version": "2.0.0"
+  },
+  "externalDocs": {
+    "description": "Administration Guide - SAP Task Center Integration for SAP Advanced Financial Closing",
+    "url": "https://help.sap.com/docs/advanced-financial-closing/administration/sap-task-center-integration-for-sap-advanced-financial-closing"
+  },
+  "servers": [
+    {
+      "url": "/api/task-provider/v2"
+    }
+  ],
+  "security": [
+    {
+      "oauth2": ["AFC_API_Access"]
+    },
+    {
+      "bearer": ["AFC_API_Access"]
+    }
+  ],
+  "x-sap-shortText": "Defines how a system or application can integrate with the SAP Task Center Service.",
+  "tags": [
+    {
+      "name": "Task Provider SPI",
+      "description": "Retrieve all tasks updated after a certain point in time with a technical user."
+    },
+    {
+      "name": "Task Attachments",
+      "description": "Task Center acts as a proxy for attachments. They are not cached. Any additional headers provided by either the client app, or task provider will be propagated as well."
+    },
+    {
+      "name": "Task Comments",
+      "description": "Task Center acts as a proxy for comments. They are not cached."
+    },
+    {
+      "name": "Task Provider Configuration API",
+      "description": "Configure when the task provider should start or stop pushing (if supported) task updates to Task Center."
+    }
+  ],
+  "paths": {
+    "/bulkOperation": {
+      "post": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Execute Mass Operation",
+        "description": "Execute Mass Operation to a group of entities (finalizing OR non-finalizing). For example, approve OR increase priority of tasks.",
+        "operationId": "provider_storeTasksOperations",
+        "parameters": [
+          {
+            "name": "Accept-Language",
+            "in": "header",
+            "description": "The language to retrieve the error messages text in, represented as a standard HTTP header (see https://tools.ietf.org/html/rfc3066#section-2.1)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "en-US"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The operation to be executed on for the tasks",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkOperationEntities"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The request was accepted. The operation will be executed asynchronously.\nThe updated tasks, will be provided to Task Center, either via push, or with the next delta pull.\n"
+          },
+          "204": {
+            "description": "The request was accepted. The operation will be executed asynchronously.\nThe updated tasks, will be provided to Task Center, either via push, or with the next delta pull.\n"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Retrieve all tasks updated",
+        "description": "Retrieve all tasks updated after a certain point in time with a technical user",
+        "operationId": "provider_getTasks",
+        "parameters": [
+          {
+            "name": "modifiedAfter",
+            "in": "query",
+            "description": "Only return tasks with a 'modifiedAt' timestamp greater than or equal to this timestamp",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "utc",
+              "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$"
+            }
+          },
+          {
+            "name": "lastId",
+            "in": "query",
+            "description": "Only return tasks with an ID lexicographically greater than this ID. Applicable ONLY to tasks whose 'modifiedAt' timestamp EXACTLY matches the 'modifiedAfter' parameter.",
+            "schema": {
+              "type": "string",
+              "default": null,
+              "nullable": true
+            }
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "description": "How many tasks shall be returned at most",
+            "schema": {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer",
+              "default": 100
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Languages"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the matching tasks, first ordered by modifiedAt (ascending, most recent changes last) and second by ID (lexicographically)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tasks"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}": {
+      "get": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Retrieve a single task",
+        "description": "Retrieve a single task with a technical user",
+        "operationId": "provider_getTask",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Languages"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/description": {
+      "get": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Retrieve a single task description",
+        "description": "Retrieve a single task description for the current user",
+        "operationId": "provider_getTaskDescription",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, which description is to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the plain text task description",
+            "content": {
+              "text/plain; charset=utf-8": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "Content-Language": {
+                "schema": {
+                  "type": "string",
+                  "example": "[Content-Language: fr-FR]\n"
+                },
+                "description": "[https://tools.ietf.org/html/rfc7231#section-3.1.3.2](https://tools.ietf.org/html/rfc7231#section-3.1.3.2).\n\nActual language code of the content - might differ from the requested language."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/details": {
+      "get": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Retrieve task-provider-specific details",
+        "description": "Retrieve task-provider-specific details for a single task with the current user",
+        "operationId": "provider_getTaskDetails",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "description": "An encoded path or URI identifying the requested task-provider-specific details",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "description": "A comma-separated list of MIME types understood by the client, represented as a standard\nHTTP header (see https://tools.ietf.org/html/rfc2616#section-14.1). Note that the Accept\nheader supports parameter passing by appending any number of key/value pairs to the MIME\ntype:\n\n```\nmedia-range    = ( \"*/*\"\n  | ( type \"/\" \"*\" )\n  | ( type \"/\" subtype )\n  ) *( \";\" parameter )\ntype = token\nsubtype = token\nparameter = attribute \"=\" value\nattribute = token\nvalue = token | quoted-string\n```\n\nSee RFC 2616 for details.\n",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "examples": {
+              "simple": {
+                "value": "application/vnd.sap.concur.travel-expense-details+json"
+              },
+              "and": {
+                "value": "application/vnd.sap.concur.travel-expense-details+json;param1=val1;param2=val2"
+              }
+            }
+          },
+          {
+            "name": "Accept-Encoding",
+            "in": "header",
+            "description": "A comma-separated list of encodings understood by the client, represented as a standard HTTP header (see https://tools.ietf.org/html/rfc7231#section-5.3.4)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "*",
+              "example": "br;q=1.0, gzip;q=0.8, *;q=0.1"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the task details",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnyValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "406": {
+            "$ref": "#/components/responses/406"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/response": {
+      "post": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Respond to a task",
+        "description": "Respond to a task with the current user (completing). Example - approve a task.",
+        "operationId": "provider_storeTaskResponse",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task to be responded to",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Languages"
+          },
+          {
+            "name": "Accept-Language",
+            "in": "header",
+            "description": "The language to retrieve the error messages text in, represented as a standard HTTP header (see https://tools.ietf.org/html/rfc3066#section-2.1)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "en-US"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The response to be provided for the task",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Response"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The task has been successfully responded to",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The request was accepted. Task will be responded to, asynchronously.\nThe updated task, will be provided to Task Center, either via push, or with the next delta pull.\n"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/action": {
+      "post": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Execute an action",
+        "description": "Execute an action on a task with the current user (non-completing). Example - increase priority of a task.",
+        "operationId": "provider_storeTaskAction",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task the action should be executed on.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Languages"
+          },
+          {
+            "name": "Accept-Language",
+            "in": "header",
+            "description": "The language to retrieve the error messages text in, represented as a standard HTTP header (see https://tools.ietf.org/html/rfc3066#section-2.1)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "en-US"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The action to be executed for the task",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Action"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The action has been successfully executed on the task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/taskDefinitions": {
+      "get": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Retrieve a list of all task definitions",
+        "description": "Retrieve a list of all task definitions with a technical user",
+        "operationId": "provider_getTaskDefinitions",
+        "parameters": [
+          {
+            "name": "$top",
+            "in": "query",
+            "description": "How many task definitions shall be returned at most",
+            "schema": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer",
+              "default": 100
+            }
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "description": "How many task definitions shall be skipped",
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Languages"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of task definitions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDefinitions"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/taskDefinitions/{taskDefinitionUrn}": {
+      "get": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Retrieve a single task definition",
+        "description": "Retrieve a single task definition with a technical user",
+        "operationId": "provider_getTaskDefinition",
+        "parameters": [
+          {
+            "name": "taskDefinitionUrn",
+            "in": "path",
+            "description": "The URN of the task definition to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Languages"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the task definition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDefinition"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/capabilities": {
+      "get": {
+        "tags": ["Task Provider SPI"],
+        "summary": "Introspect technical capabilities",
+        "description": "Introspect technical capabilities supported by the task provider with a technical user. Optional. Task Center will fallback to the default value of each individual capability.",
+        "operationId": "provider_getCapabilities",
+        "responses": {
+          "200": {
+            "description": "Returns the task provider's capabilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/configuration/push": {
+      "put": {
+        "tags": ["Task Provider Configuration API"],
+        "summary": "Request from the task provider to start or stop pushing",
+        "description": "Request from the task provider to start or stop pushing task and task definition updates with a technical user. Optional. Invoked if \"tasks.push\" capability is set to true.",
+        "operationId": "provider_configPush",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Languages"
+          }
+        ],
+        "requestBody": {
+          "description": "Push configuration setting",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Configuration applied acknowledgement"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/attachments": {
+      "get": {
+        "tags": ["Task Attachments"],
+        "summary": "Retrieve attachments",
+        "description": "Retrieve attachments for a single task with the current user",
+        "operationId": "provider_getTaskAttachments",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task for which attachments are to be retrieved.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "A provider specific attachments context identifier. To be used by task details UIs to operate with a subset of attachments.\n  * example: context=lineItemId/XYZ           \n  * If provided, only the attachments, relevant for the provided context, should be returned.\n  * If not provided, it is up to the task provider to return either\n      * All the attachments, related to the task, regardless of the context.\n      * Empty list, if no attachments are relevant to the task root context.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of attachments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachments"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Task Attachments"],
+        "summary": "Creates an attachment",
+        "description": "Creates an attachment (header only) for a single task with the current user. The binary content must be provided via a subsequent PUT request.",
+        "operationId": "provider_storeAttachment",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, for which a new attachment is to be uploaded.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "A provider specific attachments context identifier. To be used by task details UIs to operate with a subset of attachments.\n  * example: context=lineItemId/XYZ           \n  * If provided, the attachment being uploaded, should be associated with the provided context.\n  * If not provided, the attachment being uploaded, should be associated with the root context (task).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The attachment to be created (header only)",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachmentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The attachment was created (header only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/attachments/$count": {
+      "get": {
+        "tags": ["Task Attachments"],
+        "summary": "Return the total number of attachments",
+        "description": "Return the total number of attachments for a single task with the current user",
+        "operationId": "provider_getTaskAttachmentsCount",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, which attachments count is to be retrieved.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "A provider specific attachments context identifier. To be used by task details UIs to operate with a subset of attachments.\n  * example: context=lineItemId/XYZ           \n  * If provided, only the attachments, relevant for the provided context, should be counted.\n  * If not provided, it is up to the task provider to either\n      * Count all the attachments, related to the task, regardless of the context.\n      * Return 0, if no attachments are relevant to the task root context.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the attachments count",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/attachments/{attachmentUrn}": {
+      "get": {
+        "tags": ["Task Attachments"],
+        "summary": "Retrieve a concrete attachment",
+        "description": "Retrieve a concrete attachment for a single task with the current user",
+        "operationId": "provider_getTaskAttachmentHeader",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, which attachment is to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentUrn",
+            "in": "path",
+            "description": "The URN of the attachment, which is to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the attachment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Task Attachments"],
+        "summary": "Delete an attachment",
+        "description": "Delete an attachment for a single task with the current user",
+        "operationId": "provider_deleteAttachment",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task for which the attachment is to be deleted",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentUrn",
+            "in": "path",
+            "description": "The URN of the attachment to be deleted",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The attachment was deleted"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Task Attachments"],
+        "summary": "Updates an existing attachment",
+        "description": "Updates an existing attachment (header only) for a single task with the current user.  The binary content must be updated via a subsequent PUT request to the /content endpoint.",
+        "operationId": "provider_updateAttachment",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, for which an existing attachment is to be updated.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentUrn",
+            "in": "path",
+            "description": "The URN of the attachment, which is to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The attachment to be updated (header only)",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachmentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attachment was updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/attachments/{attachmentUrn}/content": {
+      "get": {
+        "tags": ["Task Attachments"],
+        "summary": "Retrieve the attachment's binary",
+        "description": "Retrieve the attachment's binary content for a single task with the current user",
+        "operationId": "provider_getTaskAttachmentContent",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task for which the attachment's binary content is to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentUrn",
+            "in": "path",
+            "description": "The URN of the attachment the binary content of which is to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the attachment's binary content",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string",
+                  "example": "[Content-Type: text/plain; charset=ISO-8859-1], [Content-Type: application/vnd.rar]\n"
+                },
+                "description": "[https://www.ietf.org/rfc/rfc2045.txt](https://www.ietf.org/rfc/rfc2045.txt) section 5."
+              },
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string",
+                  "example": "[Content-Disposition: inline], [Content-Disposition: attachment; filename=bus_tickets.rar]\n"
+                },
+                "description": "[https://www.ietf.org/rfc/rfc2183.txt](https://www.ietf.org/rfc/rfc2183.txt)"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Task Attachments"],
+        "summary": "Set or update the binary content",
+        "description": "Set or update the binary content of an attachment for a single task with the current user",
+        "operationId": "provider_setTaskAttachmentContent",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task for which an existing attachment is to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentUrn",
+            "in": "path",
+            "description": "The URN of the attachment which is to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ContentType"
+          },
+          {
+            "$ref": "#/components/parameters/ContentDisposition",
+            "required": true,
+            "description": "Contains the raw file name\n  * example: Content-Disposition: attachment; filename=\"myAttachment.zip\""
+          }
+        ],
+        "requestBody": {
+          "description": "The binary attachment content to be stored",
+          "required": true,
+          "content": {
+            "*/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attachment content was stored. Returning the recalculated Attachment metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Attachment content was stored"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "411": {
+            "$ref": "#/components/responses/411"
+          },
+          "413": {
+            "$ref": "#/components/responses/413"
+          },
+          "415": {
+            "$ref": "#/components/responses/415"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/comments": {
+      "get": {
+        "tags": ["Task Comments"],
+        "summary": "Retrieve comments",
+        "description": "Retrieve comments for a single task with the current user",
+        "operationId": "provider_getTaskComments",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task for which comments are to be retrieved.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "A provider specific comments context identifier. To be used by task details UIs to operate with a subset of comments.\n  * example: context=lineItemId/XYZ           \n  * If provided, only the comments, relevant for the provided context, should be returned.\n  * If not provided, it is up to the task provider to return either\n      * All the comments, related to the task, regardless of the context.\n      * Empty list, if no comments are relevant to the task root context.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the list of comments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comments"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Task Comments"],
+        "summary": "Post a new comment",
+        "description": "Post a new comment for a single task with the current user",
+        "operationId": "provider_storeComment",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, for which a new comment is to be posted.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "A provider specific comments context identifier. To be used by task details UIs to operate with a subset of comments.\n  * example: context=lineItemId/XYZ           \n  * If provided, the comment being posted, should be associated with the provided context.\n  * If not provided, the comment being posted, should be associated with the root context (task).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The comment was created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/comments/$count": {
+      "get": {
+        "tags": ["Task Comments"],
+        "summary": "Return the total number of comments",
+        "description": "Return the total number of comments for a single task with the current user",
+        "operationId": "provider_getTaskCommentsCount",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, which comments count is to be retrieved.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "A provider specific comments context identifier. To be used by task details UIs to operate with a subset of comments.\n  * example: context=lineItemId/XYZ           \n  * If provided, only the comments, relevant for the provided context, should be counted.\n  * If not provided, it is up to the task provider to either\n      * Count all the comments, related to the task, regardless of the context.\n      * Return 0, if no comments are relevant to the task root context.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the comments count",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/tasks/{taskUrn}/comments/{commentId}": {
+      "get": {
+        "tags": ["Task Comments"],
+        "summary": "Retrieve a concrete comment",
+        "description": "Retrieve a concrete comment for a single task with the current user",
+        "operationId": "provider_getTaskComment",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, which comment is to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "The URN of the comment, which is to be retrieved",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Task Comments"],
+        "summary": "Delete a comment for a single task with the current user",
+        "description": "Delete a comment",
+        "operationId": "provider_deleteComment",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task for which the comment is to be deleted",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "The URN of the comment to be deleted",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The comment was deleted"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Task Comments"],
+        "summary": "Update an existing comment for a single task with the current user",
+        "description": "Update an existing comment",
+        "operationId": "provider_updateComment",
+        "parameters": [
+          {
+            "name": "taskUrn",
+            "in": "path",
+            "description": "The URN of the task, for which an existing comment is to be updated.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "The URN of the comment, which is to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Comment was updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "501": {
+            "$ref": "#/components/responses/501"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Task": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractTask"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "subject": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LocalizedText"
+                },
+                "minItems": 1
+              },
+              "recipientUsers": {
+                "$ref": "#/components/schemas/RecipientUsers"
+              },
+              "recipientGroups": {
+                "$ref": "#/components/schemas/RecipientGroups"
+              }
+            }
+          }
+        ]
+      },
+      "TaskUpdate": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractBase"
+          },
+          {
+            "$ref": "#/components/schemas/AbstractTaskBase"
+          },
+          {
+            "required": ["modifiedAt", "definitionId"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "urn": {
+                "type": "string"
+              },
+              "subject": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LocalizedText"
+                }
+              },
+              "recipientUsers": {
+                "$ref": "#/components/schemas/RecipientUsers"
+              },
+              "recipientGroups": {
+                "$ref": "#/components/schemas/RecipientGroups",
+                "minItems": 1
+              }
+            }
+          }
+        ]
+      },
+      "TaskDefinition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractTaskDefinition"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LocalizedText"
+                },
+                "minItems": 1
+              },
+              "possibleResponses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ResponseDefinition"
+                },
+                "default": []
+              },
+              "possibleActions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ActionDefinition"
+                },
+                "default": []
+              },
+              "customAttributes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CustomAttributeDefinition"
+                },
+                "maxItems": 30,
+                "default": []
+              }
+            }
+          }
+        ]
+      },
+      "ResponseDefinition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractResponseDefinition"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LocalizedText"
+                },
+                "minItems": 1
+              },
+              "possibleReasons": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ReasonDefinition"
+                },
+                "default": []
+              }
+            }
+          }
+        ]
+      },
+      "ActionDefinition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractActionDefinition"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LocalizedText"
+                },
+                "minItems": 1
+              },
+              "possibleReasons": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ReasonDefinition"
+                },
+                "default": []
+              }
+            }
+          }
+        ]
+      },
+      "ReasonDefinition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractReasonDefinition"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LocalizedText"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        ]
+      },
+      "CustomAttributeDefinition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractCustomAttributeDefinition"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LocalizedText"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        ]
+      },
+      "Tasks": {
+        "type": "object",
+        "required": ["value"],
+        "properties": {
+          "value": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "minItems": 0
+          }
+        }
+      },
+      "TaskDefinitions": {
+        "type": "object",
+        "required": ["value"],
+        "properties": {
+          "value": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskDefinition"
+            },
+            "minItems": 0
+          }
+        }
+      },
+      "Capabilities": {
+        "type": "object",
+        "required": ["value"],
+        "properties": {
+          "value": {
+            "type": "array",
+            "nullable": true,
+            "minItems": 0,
+            "items": {
+              "$ref": "#/components/schemas/Capability"
+            }
+          }
+        },
+        "description": "List of task provider capabilities (optional).\nIf the value returned is null or empty list,\nTask Center will fallback to the default value of each individual capability.\n"
+      },
+      "Capability": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "description": "A name=value pair, defining a given capability, supported by the task provider.\nThe task provider needs to return the capabilities it supports.\nOmitting a capability implies the default value will be used (see below).\nThe following capabilities are supported:\n* tasks.pull:\n    * Always true - required by the SPI\n* taskDefinitions.pull:\n    * Always true - required by the SPI\n* tasks.push: Should only be provided, if the task provider supports PUSH mechanism for task updates.\n    * Default: false.\n"
+      },
+      "AbstractBase": {
+        "type": "object",
+        "required": ["urn"],
+        "properties": {
+          "urn": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 300,
+            "description": "A globally unique URN-based identifier of an entity in the task domain, consisting of a common prefix and a number of segments:\n\n'urn:sap.odm.bpm.\\<entityType\\>:\\<appId\\>:\\<appInstId\\>:\\<tenantId\\>:\\<localId\\>'\n\nThe entityType segment is specific for the entity in question and static in nature and must be a lower-case, singular term containing letters only representing the entity itself, e.g. 'task' for tasks, 'taskdefinition' for task definitions, etc. Child entities should override this part of the regex and provide for a fixed string.\n\nAll other segments appId, appInstId, tenantId, and localId follow the syntax for valid URI path segments as defined in http://tools.ietf.org/html/rfc3986#section-3.3 with the exception of the colon ':' which is reserved to separate the segments from each other.\n\npchar = unreserved / pct-encoded / sub-delims / \"@\"\n\npct-encoded = \"%\" HEXDIG HEXDIG\n\nunreserved  = ALPHA / DIGIT / \"-\" / \".\" / \"_\" / \"~\"\n\nsub-delims  = \"!\" / \"$\" / \"&\" / \"'\" / \"(\" / \")\"\n            / \"*\" / \"+\" / \",\" / \";\" / \"=\"\n\n\nSo it's basically A–Z, a–z, 0–9, -, ., _, ~, !, $, &, ', (, ), *, +, ,, ;, =, @, as well as % that must be followed by two hexadecimal digits.\n\nAny other character/byte needs to be encoded using percent encoding as defined in http://tools.ietf.org/html/rfc3986#section-2.1"
+          },
+          "applicationId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The application owning this entity"
+          },
+          "applicationInstanceId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The application instance ID owning this entity"
+          },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The tenant ID owning this entity"
+          },
+          "localId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The ID of this entity locally within this application instance and tenant"
+          }
+        },
+        "description": "The base entity for other entities (with a relaxed set of required properties)"
+      },
+      "Base": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractBase"
+          },
+          {
+            "required": ["applicationId", "applicationInstanceId", "tenantId", "localId"]
+          }
+        ],
+        "description": "The base entity for other entities (to be used as base class unless required otherwise)"
+      },
+      "AbstractTaskBase": {
+        "type": "object",
+        "properties": {
+          "definitionId": {
+            "type": "string",
+            "format": "uri",
+            "description": "The ID of the associated task definition (see id property of Base entity for pattern description)"
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": ["READY", "RESERVED", "IN_PROGRESS", "FOR_RESUBMISSION", "INACTIVE", "COMPLETED", "CANCELED"],
+            "description": "The status of the task.\n\n* `READY` - Task has been created and is ready to be processed by any recipient; this should be the default starting state for *OPEN* tasks\n* `RESERVED` - Task has been exclusively reserved for processing by one recipient who is now also the task's processor\n* `IN_PROGRESS` - Task is currently being processed by the processor (*DEPRECATED* and kept for backwards compatibility reasons only)\n* `FOR_RESUBMISSION` -  Task has been postponed (and implicitly reserved) by a recipient and will be snoozed for a certain time (at which it returns as reserved for the processor)\n* `INACTIVE` - Task has been (temporarily) revoked by the task provider and will disappear from all recipients' inbox\n* `COMPLETED` - Task was successfully brought to completion by the processor\n* `CANCELED` - Task is no longer available for processing (for whatever reason, e.g. cancellation, deletion [tomb stoning])\n"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "utc",
+            "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+            "description": "When the task was initially created"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "userid",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "Who created the task (null implies created by the application/system)"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "utc",
+            "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+            "description": "When the task was last changed"
+          },
+          "modifiedBy": {
+            "type": "string",
+            "format": "userid",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "Who modified the task (null implies modified by the application/system)"
+          },
+          "processor": {
+            "type": "string",
+            "format": "userid",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "Who is currently assigned to the task and processing it (null implies task is unassigned)"
+          },
+          "subject": {
+            "description": "A localized short text describing what the task is about"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "utc",
+            "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+            "nullable": true,
+            "description": "When the task is due (null implies task has no due date)"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "utc",
+            "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+            "nullable": true,
+            "description": "When the task was completed (null implies not completed yet)"
+          },
+          "completedBy": {
+            "type": "string",
+            "format": "userid",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "Who completed the task (null implies that the task is not completed or completed by the application/system)"
+          },
+          "priority": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": ["VERY_HIGH", "HIGH", "MEDIUM", "LOW"],
+            "description": "What importance the task has"
+          },
+          "uiLink": {
+            "type": "string",
+            "format": "url",
+            "maxLength": 2000,
+            "description": "A deep link into a Cloud LoB's application UI to display and process the task"
+          },
+          "mobileUiLink": {
+            "type": "string",
+            "nullable": true,
+            "format": "url",
+            "maxLength": 2000,
+            "description": "A deep link to the Cloud LoB's application UI to display and process the task in a mobile app Web View"
+          },
+          "embeddableUiLink": {
+            "type": "string",
+            "nullable": true,
+            "format": "url",
+            "maxLength": 2000,
+            "description": "A deep link to the Cloud LoB's application UI to display and process the task in a web app IFrame"
+          },
+          "attachmentsCount": {
+            "type": "integer",
+            "nullable": true,
+            "description": "The total number of task attachments"
+          },
+          "commentsCount": {
+            "type": "integer",
+            "nullable": true,
+            "description": "The total number of task comments"
+          },
+          "validResponseCodes": {
+            "type": "array",
+            "nullable": true,
+            "example": ["approve", "reject"],
+            "items": {
+              "type": "string",
+              "pattern": "^[^,]+$",
+              "description": "The code of a valid response."
+            },
+            "description": "List of the response codes, valid for the task instance.\nSubset of the possible responses, defined at TaskDefinition level.\n  * If the field is omitted or null, depending on the scenario, this implies:\n      * PULL - all the responses defined at TaskDefinition level, are valid for the task instance.\n      * PUSH - the cached value of the validResponseCodes, if any, remains unchanged.\n  * Empty list - [] value, implies, that there are no valid responses for the task instance.\n"
+          },
+          "validActionCodes": {
+            "type": "array",
+            "nullable": true,
+            "example": ["increasePrio", "extendETA"],
+            "items": {
+              "type": "string",
+              "pattern": "^[^,]+$",
+              "description": "The code of a valid action."
+            },
+            "description": "List of the action codes, valid for the task instance.\nSubset of the possible actions, defined at TaskDefinition level.\n  * If the field is omitted or null, depending on the scenario, this implies:\n      * PULL - all the actions defined at TaskDefinition level, are valid for the task instance.\n      * PUSH - the cached value of the validActionCodes, if any, remains unchanged.\n  * Empty list - [] value, implies, that there are no valid actions for the task instance.\n"
+          },
+          "customAttributes": {
+            "description": "A list of additional attributes to present with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomAttribute"
+            },
+            "maxItems": 30
+          },
+          "operationErrors": {
+            "$ref": "#/components/schemas/OperationErrors"
+          }
+        },
+        "description": "The base entity for other task-like entities"
+      },
+      "AbstractTask": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Base"
+          },
+          {
+            "$ref": "#/components/schemas/AbstractTaskBase"
+          },
+          {
+            "required": ["definitionId", "status", "createdAt", "modifiedAt", "subject"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "urn": {
+                "type": "string"
+              },
+              "createdBy": {
+                "type": "string",
+                "format": "userid",
+                "maxLength": 255,
+                "nullable": true,
+                "description": "Who created the task (null implies created by the application/system)",
+                "default": null
+              },
+              "modifiedBy": {
+                "type": "string",
+                "format": "userid",
+                "maxLength": 255,
+                "nullable": true,
+                "description": "Who modified the task (null implies modified by the application/system)",
+                "default": null
+              },
+              "processor": {
+                "type": "string",
+                "format": "userid",
+                "maxLength": 255,
+                "nullable": true,
+                "description": "Who is currently assigned to the task and processing it (null implies task is unassigned)",
+                "default": null
+              },
+              "dueAt": {
+                "type": "string",
+                "format": "utc",
+                "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+                "nullable": true,
+                "description": "When the task is due (null implies task has no due date)",
+                "default": null
+              },
+              "completedAt": {
+                "type": "string",
+                "format": "utc",
+                "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+                "nullable": true,
+                "description": "When the task was completed (null implies not completed yet)",
+                "default": null
+              },
+              "priority": {
+                "type": "string",
+                "maxLength": 16,
+                "enum": ["VERY_HIGH", "HIGH", "MEDIUM", "LOW"],
+                "description": "What importance the task has",
+                "default": "MEDIUM"
+              },
+              "attachmentsCount": {
+                "type": "integer",
+                "nullable": true,
+                "default": 0,
+                "description": "The total number of task attachments"
+              },
+              "commentsCount": {
+                "type": "integer",
+                "nullable": true,
+                "default": 0,
+                "description": "The total number of task comments"
+              },
+              "customAttributes": {
+                "description": "A list of additional attributes to present with the task",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CustomAttribute"
+                },
+                "maxItems": 30,
+                "default": []
+              },
+              "mobileUiLink": {
+                "type": "string",
+                "nullable": true,
+                "default": null,
+                "format": "url",
+                "maxLength": 2000,
+                "description": "A deep link to the Cloud LoB's application UI to display and process the task in a mobile app Web View"
+              },
+              "embeddableUiLink": {
+                "type": "string",
+                "nullable": true,
+                "default": null,
+                "format": "url",
+                "maxLength": 2000,
+                "description": "A deep link to the Cloud LoB's application UI to display and process the task in a web app IFrame"
+              }
+            }
+          }
+        ],
+        "description": "An entity identifying a piece of work to be processed and completed by a person"
+      },
+      "AbstractTaskDefinition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Base"
+          },
+          {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "urn": {
+                "type": "string"
+              },
+              "name": {
+                "description": "The localized name of the task definition"
+              },
+              "possibleResponses": {
+                "description": "A list of possible completion operations on tasks of this type. Can be asynchronous."
+              },
+              "possibleActions": {
+                "description": "A list of possible non-completing operations on tasks of this type. Can be only synchronous."
+              },
+              "customAttributes": {
+                "description": "A list of additional attributes to present with tasks of this type"
+              },
+              "capabilities": {
+                "type": "array",
+                "nullable": true,
+                "minItems": 0,
+                "description": "Which operations are supported by tasks, having this task definition",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "enum": ["attachments", "attachments.create", "comments", "comments.create", "tasks.description"]
+                    },
+                    "value": {
+                      "type": "boolean"
+                    }
+                  },
+                  "description": "Flags, defining is a given capability, supported by tasks having this task definition.\nOmitting a capability implies the default value will be used (see below).\n\n\nThe following capabilities are supported:\n* attachments:\n    * Default: false - is attachments functionality supported for the task definition\n* attachments.create:\n    * Default: false - can an attachment be uploaded\n* comments:\n    * Default: false - is comments functionality supported for the task definition\n* comments.create:\n    * Default: false - can a comment be posted\n* tasks.description:\n    * Default: false - is plain text task description supported\n"
+                }
+              },
+              "taskDetailsSettings": {
+                "$ref": "#/components/schemas/TaskDetailsSettings"
+              }
+            },
+            "description": "An entity providing common type information for a set of tasks; aka task type"
+          }
+        ]
+      },
+      "TaskDetailsSettings": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "webUISettings": {
+            "$ref": "#/components/schemas/UISettings"
+          },
+          "mobileUISettings": {
+            "$ref": "#/components/schemas/UISettings"
+          }
+        },
+        "description": "Bundles together web and mobile task detail UI settings"
+      },
+      "UISettings": {
+        "type": "object",
+        "nullable": true,
+        "required": ["uiType"],
+        "properties": {
+          "uiType": {
+            "type": "string",
+            "default": "Default",
+            "enum": ["Default", "BuiltIn", "DataDriven", "IFrame", "Form"],
+            "description": "Type of the task details UI to be used by the web app\n  * Default - built-in generic UI, containing task header data, custom attributes and long text description\n      * Configurable properties: none\n  * BuiltIn - built-in, task type specific, UI (only available for some task types)\n      * Using the /details endpoint to request the UI data\n      * Configurable properties:\n        * enableActions\n        * enableAttachments\n        * enableComments\n        * dataDetailsParameters\n  * DataDriven - special built-in UI, expecting a predefined task details data structure, to populate the task details UI\n      * Using the /details endpoint to request the UI data\n      * Configurable properties:\n        * dataDetailsParameters\n  * IFrame - the remote UI is loaded via an IFrame or Web View\n      * The remote UI URL is part of the Task instance - the first of:\n          * mobileUiLink\n          * embeddableUiLink\n          * uiLink\n      * Configurable properties:\n        * enableActions\n        * enableAttachments\n        * enableComments\n        * urlParams\n  * Form - declarative UI, leveraging the /details endpoint to obtain both the form layout in JSON format and the JSON data to populate it\n      * Configurable properties:\n        * enableActions\n        * enableAttachments\n        * enableComments\n        * formDetailsParameters\n        * dataDetailsParameters\nBased on the uiType, only the respective *UISettings fields should be populated, except for Default uiType."
+          },
+          "builtInUISettings": {
+            "$ref": "#/components/schemas/BuiltInUISettings"
+          },
+          "dataDrivenUISettings": {
+            "$ref": "#/components/schemas/DataDrivenUISettings"
+          },
+          "iframeUISettings": {
+            "$ref": "#/components/schemas/IFrameUISettings"
+          },
+          "formUISettings": {
+            "$ref": "#/components/schemas/FormUISettings"
+          }
+        }
+      },
+      "BuiltInUISettings": {
+        "type": "object",
+        "nullable": true,
+        "description": "BuiltIn task details UI settings",
+        "properties": {
+          "enableActions": {
+            "type": "boolean",
+            "default": true,
+            "description": "Should the main UI app visualize the action buttons (true), or leave this to the embedded task details UI app (false)"
+          },
+          "enableAttachments": {
+            "type": "boolean",
+            "default": true,
+            "description": "Should the main UI app visualize the attachments (true), or leave this to the embedded task details UI app (false)"
+          },
+          "enableComments": {
+            "type": "boolean",
+            "default": true,
+            "description": "Should the main UI app visualize the comments (true), or leave this to the embedded task details UI app (false)"
+          },
+          "dataDetailsParameters": {
+            "$ref": "#/components/schemas/DetailsParameters"
+          }
+        }
+      },
+      "DataDrivenUISettings": {
+        "type": "object",
+        "nullable": true,
+        "description": "DataDriven task details UI settings",
+        "properties": {
+          "dataDetailsParameters": {
+            "$ref": "#/components/schemas/DetailsParameters"
+          }
+        }
+      },
+      "IFrameUISettings": {
+        "type": "object",
+        "nullable": true,
+        "description": "IFrame task details UI settings",
+        "properties": {
+          "enableActions": {
+            "type": "boolean",
+            "default": false,
+            "description": "Should the main UI app visualize the action buttons (true), or leave this to the embedded task details UI app (false)"
+          },
+          "enableAttachments": {
+            "type": "boolean",
+            "default": false,
+            "description": "Should the main UI app visualize the attachments (true), or leave this to the embedded task details UI app (false)"
+          },
+          "enableComments": {
+            "type": "boolean",
+            "default": false,
+            "description": "Should the main UI app visualize the comments (true), or leave this to the embedded task details UI app (false)"
+          },
+          "urlParams": {
+            "type": "string",
+            "default": null,
+            "example": "headerless=true&standaloneDetailDeep=true...",
+            "description": "Additional, static URL parameters, appended to the main URL and needed to properly embed the UI app, having uiType: IFrame \n  * Note: parameter values must be properly URL encoded\n  * Note: parameters prefixed as \"sap-tc-*\" are reserved for internal usage"
+          }
+        }
+      },
+      "FormUISettings": {
+        "type": "object",
+        "nullable": true,
+        "description": "Form task details UI settings",
+        "properties": {
+          "enableActions": {
+            "type": "boolean",
+            "default": true,
+            "description": "Should the main UI app visualize the action buttons (true), or leave this to the embedded task details UI app (false)"
+          },
+          "enableAttachments": {
+            "type": "boolean",
+            "default": true,
+            "description": "Should the main UI app visualize the attachments (true), or leave this to the embedded task details UI app (false)"
+          },
+          "enableComments": {
+            "type": "boolean",
+            "default": true,
+            "description": "Should the main UI app visualize the comments (true), or leave this to the embedded task details UI app (false)"
+          },
+          "formDetailsParameters": {
+            "$ref": "#/components/schemas/DetailsParameters"
+          },
+          "dataDetailsParameters": {
+            "$ref": "#/components/schemas/DetailsParameters"
+          }
+        }
+      },
+      "DetailsParameters": {
+        "type": "object",
+        "description": "Parameters needed to invoke the /details endpoint",
+        "required": ["accept"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "default": null,
+            "description": "An encoded path or URI identifying the requested task-provider-specific details"
+          },
+          "accept": {
+            "type": "string",
+            "description": "Results in a specific Accept request header.\nA comma-separated list of MIME types understood by the client, represented as a standard\nHTTP header (see https://tools.ietf.org/html/rfc2616#section-14.1). Note that the Accept\nheader supports parameter passing by appending any number of key/value pairs to the MIME\ntype:\n\n```\nmedia-range    = ( \"*/*\"\n  | ( type \"/\" \"*\" )\n  | ( type \"/\" subtype )\n  ) *( \";\" parameter )\ntype = token\nsubtype = token\nparameter = attribute \"=\" value\nattribute = token\nvalue = token | quoted-string\n```\n\n* examples\n    * Simple - 'application/vnd.sap.concur.travel-expense-details+json'\n    * With Parameters - 'application/vnd.sap.concur.travel-expense-details+json;param1=val1;param2=val2'      \n"
+          }
+        }
+      },
+      "AbstractOperation": {
+        "required": ["code"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[^,]+$",
+            "description": "The code of the associated operation definition"
+          },
+          "comment": {
+            "type": "string",
+            "default": null,
+            "nullable": true,
+            "description": "A comment entered by the user when executing the operation (null implies no comment)"
+          },
+          "reasonCode": {
+            "type": "string",
+            "default": null,
+            "nullable": true,
+            "description": "The code of the associated reason definition (null implies no reason)"
+          }
+        },
+        "description": "A value type describing the concrete operation / outcome taken for a task"
+      },
+      "Response": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractOperation"
+          }
+        ],
+        "description": "A value type describing the concrete completion response / outcome taken for a task"
+      },
+      "Action": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractOperation"
+          }
+        ],
+        "description": "A value type describing the concrete non-completing action / outcome taken for a task"
+      },
+      "AbstractOperationDefinition": {
+        "required": ["code", "name"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[^,]+$",
+            "maxLength": 64,
+            "description": "A code identifying the operation, within the task definition it belongs to"
+          },
+          "name": {
+            "description": "The localized name of the operation"
+          },
+          "nature": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": ["POSITIVE", "NEGATIVE", "NEUTRAL"],
+            "default": "NEUTRAL",
+            "description": "Whether the operation is positive, negative, or neutral in nature"
+          },
+          "commentRequired": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": ["REQUIRED", "OPTIONAL", "UNSUPPORTED"],
+            "default": "UNSUPPORTED",
+            "description": "Whether a comment is required or supported for this operation"
+          },
+          "reasonRequired": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": ["REQUIRED", "OPTIONAL", "UNSUPPORTED"],
+            "default": "UNSUPPORTED",
+            "description": "Whether a reason is required or supported for this operation"
+          },
+          "possibleReasons": {
+            "description": "A list of possible reasons to choose from"
+          },
+          "capabilities": {
+            "description": "Which capabilities are supported for this operation",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "enum": ["tasks.bulk.operations"]
+                },
+                "value": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Does the operation have the given capability\n\n\nThe following capabilities are supported:\n  * tasks.bulk.operations:\n      * Default: false - is mass execution functionality supported for this operation\n"
+                }
+              }
+            }
+          }
+        },
+        "description": "A value type describing a possible operation / outcome for tasks of a task definition"
+      },
+      "AbstractResponseDefinition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractOperationDefinition"
+          }
+        ],
+        "description": "A value type describing a possible completion response / outcome for tasks of a task definition.\nCan be asynchronous.\n"
+      },
+      "AbstractActionDefinition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AbstractOperationDefinition"
+          }
+        ],
+        "description": "A value type describing a possible non-completing action / outcome for tasks of a task definition.\nOnly synchronous operations are supported.\n"
+      },
+      "AbstractReasonDefinition": {
+        "required": ["code", "name"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "A code identifying the reason within the response it belongs to"
+          },
+          "name": {
+            "description": "The localized title of the reason"
+          }
+        },
+        "description": "A value type describing a possible motivation for a particular response of a task definition"
+      },
+      "CustomAttribute": {
+        "required": ["code", "value"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "A technical name identifying the custom attribute within the task it belongs to and matching the id of one of the task's task definition's custom attributes"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "The value of the custom attribute"
+          }
+        }
+      },
+      "AbstractCustomAttributeDefinition": {
+        "required": ["code", "type", "name"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "A technical name identifying the custom attribute definition within the task definition it belongs to"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 64,
+            "enum": ["STRING", "BOOLEAN", "INTEGER", "FLOAT", "DATE", "DATETIME", "TIME"],
+            "description": "The data type of the custom attribute. Clients MUST follow the ignore rule in\nthat they MUST be able to silently disregard new data types that are added\nin the future. Attribute values are technically always represented as strings,\nso when presented with a data type not understood by the client, the client MUST\nfall back to an attribute of type STRING and present the actual values as such.\n\n* `STRING` - A string of up to 255 printable characters\n* `BOOLEAN` - A boolean value, i.e. either true or false, represented as a string\n* `INTEGER` - An integer number in the value range -2147483648 to 2147483647, represented as a string\n* `FLOAT` - A double precision floating point number ranging from -1.7976931348623157E308 to 1.7976931348623157E308, represented as a string\n* `DATE` - A calendar date following the pattern ^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])$, represented as a string\n* `DATETIME` - A timezone-aware timestamp following the pattern ^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$, represented as a string\n* `TIME` - A time of day following the pattern ^(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$, represented as a string\n"
+          },
+          "format": {
+            "type": "string",
+            "maxLength": 64,
+            "default": null,
+            "nullable": true,
+            "description": "A modifier property that provides additional instructions to the client on how\nto render a custom attribute of a given type. Clients that do not recognize a\nspecific format MUST default back to the type alone, as if the format was not\nspecified.\n\nThe formats currently defined are:\n`type` | `format` | `Comments`\n------ | -------- | --------\n`STRING` | `CURRENCY` | A currency, expressed as a combination of an [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code and a decimal number, e.g. \"USD 200.99\"\n`DATETIME` | `DATE` | A timezone-aware date\n`STRING` | `DURATION` | Duration of time [https://www.w3.org/TR/xmlschema11-2/#duration](https://www.w3.org/TR/xmlschema11-2/#duration), expressed as defined here [https://www.w3.org/TR/xmlschema11-2/#nt-durationRep](https://www.w3.org/TR/xmlschema11-2/#nt-durationRep). Following the pattern: -?P((([0-9]+Y([0-9]+M)?([0-9]+D)?&#124;([0-9]+M)([0-9]+D)?&#124;([0-9]+D))(T(([0-9]+H)([0-9]+M)?([0-9]+(\\\\.[0-9]+)?S)?&#124;([0-9]+M)([0-9]+(\\\\.[0-9]+)?S)?&#124;([0-9]+(\\\\.[0-9]+)?S)))?)&#124;(T(([0-9]+H)([0-9]+M)?([0-9]+(\\\\.[0-9]+)?S)?&#124;([0-9]+M)([0-9]+(\\\\.[0-9]+)?S)?&#124;([0-9]+(\\\\.[0-9]+)?S))))\n"
+          },
+          "name": {
+            "description": "The localized title of the custom attribute"
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Defines the custom attributes importance and display order.\n  * Higher rank means higher importance.\n  * Example: custom attributes (CA) with respective ranks: 50, 40, 30, ... 0, would be ordered in the UI like\n    * CA1 with rank 50 will be shown first\n    * CA2 with rank 40 will be shown second\n    * CA3 with rank 30 will be shown third\n    * ...\n    * CAn with rank 0 will be shown last\n    * Custom attributes with the same rank will be shown one after the other, in random order.\n  * It is recommended for providers to use 10s or 100s, so new attributes can be inserted, without rearranging the others."
+          }
+        }
+      },
+      "LocalizedText": {
+        "required": ["languageCode", "text"],
+        "type": "object",
+        "properties": {
+          "languageCode": {
+            "$ref": "#/components/schemas/LanguageCode"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "The actual text localized in the language as per the language code"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "default": false,
+            "description": "When the default fallback language code is known, set in the respective localized text \"isDefault\" property to true.\n\nNote\n* Only one of the translations can be marked as default.\n* Language code '\\*' and a default translation are mutually exclusive. \n  If you mark a translation as default with isDefault: true, you should not return an entry with unknown language code ('\\*') in the list.\n"
+          }
+        },
+        "description": "A value type representing a piece of text translated into a number of languages"
+      },
+      "LanguageCode": {
+        "type": "string",
+        "maxLength": 5,
+        "description": "A code identifying the language used, consisting of a lowercase, two-letter ISO 639-1 code (https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes), followed by a dash '-'  and a capitalized, two-letter ISO 3166-2 sub-code in capital letters that specifies the national variety (https://en.wikipedia.org/wiki/ISO_3166-2). Examples: en-US, fr-FR, de-DE, de-AT, ...  See https://en.wikipedia.org/wiki/Language_localisation for additional information.\n\nThe '*' language code, stands for a fallback text, which will be used when the translation,  requested by the business user, is not available and the fallback language code is unknown."
+      },
+      "ErrorBase": {
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Technical code of the error to be used for support purposes.\n\nError codes SHOULD follow dot notation. The code SHOULD start with the applicationId of the task provider the error originated from.\n\nThe prefix 'sap.taskcenter.' is reserved for use by SAP Task Center.",
+            "example": "sap.taskcenter.some.error"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "User-facing (localizable) message describing the error. Errors SHOULD be presented honoring the Accept-Language HTTP header if present. English otherwise."
+          }
+        },
+        "description": "A value type representing a basic error"
+      },
+      "ErrorBody": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "target": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2000,
+                "default": null,
+                "nullable": true,
+                "description": "Resource affected by the error (null if no specific resource)"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ErrorBase"
+                },
+                "default": [],
+                "description": "Nested errors required for error processing"
+              }
+            }
+          }
+        ],
+        "description": "A value type representing the body of an error"
+      },
+      "Error": {
+        "required": ["error"],
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "description": "A value type representing a technical error with possibly nested error information"
+      },
+      "AnyValue": {
+        "nullable": true,
+        "description": "Any value, including null"
+      },
+      "RecipientUsers": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "userid",
+          "maxLength": 255
+        },
+        "description": "A list of users entitled to process the task, including the processor."
+      },
+      "RecipientGroups": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "groupid",
+          "maxLength": 255
+        },
+        "description": "A list of Identity Service groups entitled to process the task."
+      },
+      "OperationErrors": {
+        "description": "If the operation was successful, this property is null",
+        "nullable": true,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/OperationError"
+        }
+      },
+      "OperationError": {
+        "type": "object",
+        "properties": {
+          "executedAt": {
+            "type": "string",
+            "format": "utc",
+            "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+            "description": "The date and time when the operation was executed on."
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The code of the operation."
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "A return message of the operation. If any errors have occurred. Encoded with the locale of the user executing the operation."
+          },
+          "executedBy": {
+            "type": "string",
+            "format": "userid",
+            "maxLength": 255,
+            "nullable": false,
+            "description": "The user who executed the operation."
+          }
+        }
+      },
+      "Attachments": {
+        "type": "object",
+        "required": ["value"],
+        "properties": {
+          "value": {
+            "type": "array",
+            "nullable": true,
+            "minItems": 0,
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          }
+        },
+        "description": "A list of attachments"
+      },
+      "Attachment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Base"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "urn": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 300,
+                "description": "A globally unique URN-based identifier of an entity in the task domain, consisting of a common prefix and a number of segments:\n\n'urn:sap.odm.bpm.attachment:\\<appId\\>:\\<appInstId\\>:\\<tenantId\\>:\\<localId\\>'\n\nThe entityType segment is specific for the entity in question and static in nature and must be a lower-case, singular term containing letters only representing the entity itself, e.g. 'task' for tasks, 'taskdefinition' for task definitions, etc. Child entities should override this part of the regex and provide for a fixed string.\n\nAll other segments appId, appInstId, tenantId, and localId follow the syntax for valid URI path segments as defined in http://tools.ietf.org/html/rfc3986#section-3.3 with the exception of the colon ':' which is reserved to separate the segments from each other.\n\npchar = unreserved / pct-encoded / sub-delims / \"@\"\n\npct-encoded = \"%\" HEXDIG HEXDIG\n\nunreserved  = ALPHA / DIGIT / \"-\" / \".\" / \"_\" / \"~\"\n\nsub-delims  = \"!\" / \"$\" / \"&\" / \"'\" / \"(\" / \")\"\n            / \"*\" / \"+\" / \",\" / \";\" / \"=\"\n\n\nSo it's basically A–Z, a–z, 0–9, -, ., _, ~, !, $, &, ', (, ), *, +, ,, ;, =, @, as well as % that must be followed by two hexadecimal digits.\n\nAny other character/byte needs to be encoded using percent encoding as defined in http://tools.ietf.org/html/rfc3986#section-2.1"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "utc",
+                "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+                "nullable": true,
+                "default": null,
+                "description": "When the attachment was initially uploaded"
+              },
+              "modifiedAt": {
+                "type": "string",
+                "format": "utc",
+                "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+                "nullable": true,
+                "default": null,
+                "description": "When the attachment was last modified"
+              },
+              "createdBy": {
+                "type": "string",
+                "format": "userid",
+                "maxLength": 255,
+                "nullable": true,
+                "description": "Who uploaded the attachment (null implies created by the application/system)",
+                "default": null
+              },
+              "fileName": {
+                "type": "string",
+                "maxLength": 255,
+                "nullable": true,
+                "description": "Name of the binary file.",
+                "example": "outgoing_flight_ticket_screenshot.jpg",
+                "default": "attachment.bin"
+              },
+              "fileSize": {
+                "type": "integer",
+                "nullable": true,
+                "description": "Size of the binary file in bytes."
+              },
+              "fileDisplayName": {
+                "type": "string",
+                "maxLength": 255,
+                "description": "Display name of the file, to be used as a link text.",
+                "example": "Outgoing flight ticket screenshot",
+                "default": null
+              },
+              "fileDescription": {
+                "type": "string",
+                "maxLength": 20000,
+                "nullable": true,
+                "description": "Long text description of the attachment.",
+                "example": "20th of February 14:45 flight from Sofia to Port Royal, economy class, Attending the World Rum Degustation event.",
+                "default": null
+              },
+              "mimeType": {
+                "type": "string",
+                "pattern": "^\\w+\\/[-+.\\w]+$",
+                "maxLength": 500,
+                "nullable": true,
+                "description": "Media type as defined by RFC6838: https://tools.ietf.org/html/rfc6838\n  * Registered types list: https://www.iana.org/assignments/media-types/media-types.xhtml\n  * To be used to display an icon in the UI. The actual type, will be returned as a Content-Type response header, when reading the attachment's content.",
+                "default": "application/octet-stream"
+              },
+              "languageCode": {
+                "$ref": "#/components/schemas/LanguageCode",
+                "example": "en-US",
+                "description": "Only returned, if the translation doesn't match the requested language. Can be '*' if the fallback language code in unknown."
+              },
+              "readOnly": {
+                "type": "boolean",
+                "nullable": true,
+                "default": true,
+                "description": "Can the business user delete or update this attachment? \nUpdate is only possible, if the 'attachments.create' capability is set to true for the task definition.\n"
+              }
+            }
+          }
+        ],
+        "description": "An entity providing information about a task attachment"
+      },
+      "AttachmentUpdate": {
+        "type": "object",
+        "properties": {
+          "fileDisplayName": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name of the file, to be used as a link text.",
+            "example": "Outgoing flight ticket screenshot",
+            "default": null
+          },
+          "fileDescription": {
+            "type": "string",
+            "maxLength": 20000,
+            "nullable": true,
+            "description": "Long text description of the attachment.",
+            "example": "20th of February 14:45 flight from Sofia to Port Royal, economy class, Attending the World Rum Degustation event.",
+            "default": null
+          }
+        },
+        "description": "An entity providing textual information about a task attachment. All the other Attachment properties are calculated, during attachment creation or update."
+      },
+      "Comments": {
+        "type": "object",
+        "required": ["value"],
+        "properties": {
+          "value": {
+            "type": "array",
+            "nullable": true,
+            "minItems": 0,
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          }
+        },
+        "description": "A list of comments"
+      },
+      "CommentUpdate": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "nullable": true,
+            "description": "The comment text",
+            "default": null,
+            "example": "My comment"
+          }
+        },
+        "description": "Only the Comment text is provided as payload, when an Comment is being created or updated. \nAll the other Comment fields are calculated.\n"
+      },
+      "Comment": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "The comment identifier, relevant for the task provider (not globally unique)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "utc",
+            "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+            "nullable": true,
+            "default": null,
+            "description": "When the comment was initially posted"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "userid",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "Who posted the comment (null implies created by the application/system)",
+            "default": null
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "utc",
+            "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\\d|3[0-1])T(?:[0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z$",
+            "nullable": true,
+            "default": null,
+            "description": "When the comment was last modified"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "nullable": true,
+            "description": "The comment text",
+            "default": null
+          },
+          "languageCode": {
+            "$ref": "#/components/schemas/LanguageCode",
+            "example": "en-US",
+            "description": "Only returned, if the translation doesn't match the requested language. Can be '*' if the fallback language code is unknown."
+          },
+          "readOnly": {
+            "type": "boolean",
+            "nullable": true,
+            "default": true,
+            "description": "Can the business user delete or update this comment? \nUpdate is only possible, if the 'comments.create' capability is set to true for the task definition.\n"
+          }
+        },
+        "description": "An entity providing information about a task comment"
+      },
+      "BulkOperationEntity": {
+        "type": "object",
+        "properties": {
+          "urn": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string",
+            "enum": ["TASK"]
+          },
+          "taskOperation": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AbstractOperation"
+              }
+            ]
+          }
+        },
+        "description": "An entity providing information about a bulk operation. The operation is performed on the entity with the given urn."
+      },
+      "BulkOperationEntities": {
+        "type": "object",
+        "properties": {
+          "entities": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2000,
+            "items": {
+              "$ref": "#/components/schemas/BulkOperationEntity"
+            }
+          }
+        },
+        "description": "An list of task entities on which operations shall be executed in bulk mode"
+      }
+    },
+    "parameters": {
+      "Languages": {
+        "name": "languages",
+        "in": "query",
+        "description": "A comma-separated list of supported languages to retrieve translated texts in",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^(([a-z]{2}-[A-Z]{2})|([a-z]{2}))([ ]*,[ ]*(([a-z]{2}-[A-Z]{2})|([a-z]{2})))*$",
+          "example": "en-US"
+        }
+      },
+      "AcceptLanguage": {
+        "name": "Accept-Language",
+        "in": "header",
+        "description": "The language to retrieve the textual data in, represented as a standard HTTP header (see https://tools.ietf.org/html/rfc3066#section-2.1)",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "example": "en-US"
+        }
+      },
+      "ContentType": {
+        "name": "Content-Type",
+        "in": "header",
+        "schema": {
+          "type": "string",
+          "example": "Content-Type: application/json"
+        },
+        "description": "[https://www.ietf.org/rfc/rfc2045.txt](https://www.ietf.org/rfc/rfc2045.txt) section 5.\n  * example: Content-Type: application/json\n"
+      },
+      "ContentDisposition": {
+        "name": "Content-Disposition",
+        "in": "header",
+        "schema": {
+          "type": "string",
+          "example": "Content-Disposition: attachment; filename=\"myAttachment.zip\""
+        },
+        "description": "[https://www.ietf.org/rfc/rfc2183](https://www.ietf.org/rfc/rfc2183)\n  * example: Content-Disposition: attachment; filename=\"myAttachment.zip\""
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "Incorrect request. Format or structure invalid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized. Action requires user authentication",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "Access forbidden. The caller does not have the required permissions to access the resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Resource not found. The caller either provided a wrong URL or the requested resource does not exist (any longer).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "406": {
+        "description": "Not acceptable. The caller provided content negotiation headers such as Accept, Accept-Charset, Accept-Encoding, and Accept- Language, for which the server could not produce a matching result.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "Request conflict. State of the resource does not permit the request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "411": {
+        "description": "Length required. Content-Length header required.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "413": {
+        "description": "Payload Too Large. The request entity is larger than limits defined by the server.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "415": {
+        "description": "Unsupported Media Type. The server refuses to accept the request because the payload has an unsupported format.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "429": {
+        "description": "Too many requests. The caller has sent too many requests in a given amount of time",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error. The requested operation led to an error during execution",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "501": {
+        "description": "Not implemented. The server does not support the functionality required to fulfill the request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "503": {
+        "description": "Service unavailable. The server is not able to handle the request at present. If no Retry-After is given, the client SHOULD handle the response as it would for a 500 response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "headers": {
+          "Retry-After": {
+            "description": "Indicates how long the client should wait before making a follow-up request, specified as a number of seconds",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "oauth2": {
+        "description": "To use this API, you need to obtain the OAuth client credentials (client ID and secret) using the SAP BTP cockpit. After that, pass these client credentials to the SAP BTP token endpoint to obtain an access token.<br>For more information, see the Service Guide for SAP Advanced Financial Closing.",
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://{subdomain}.authentication.{region}.hana.ondemand.com/oauth/token",
+            "scopes": {}
+          }
+        }
+      },
+      "bearer": {
+        "description": "To access this API, use the HTTP bearer authentication.",
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

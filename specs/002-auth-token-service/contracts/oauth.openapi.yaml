@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: Integrove TP — OAuth 2.0 Token Service (prototype)
+  version: 1.0.0
+  description: >
+    Minimal authorization server used by SAP BTP destinations (OAuth2ClientCredentials,
+    OAuth2JWTBearer) and SAP Identity Provisioning. RFC 6749, RFC 7523 (jwt-bearer),
+    optional RFC 7522 (saml2-bearer).
+servers:
+  - url: /
+paths:
+  /oauth/token:
+    post:
+      operationId: token
+      summary: Issue an access token
+      security:
+        - clientBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [grant_type]
+              properties:
+                grant_type:
+                  type: string
+                  enum:
+                    - client_credentials
+                    - urn:ietf:params:oauth:grant-type:jwt-bearer
+                    - urn:ietf:params:oauth:grant-type:saml2-bearer
+                client_id: { type: string, description: client_secret_post }
+                client_secret: { type: string, description: client_secret_post }
+                scope: { type: string, description: Space-delimited scopes }
+                assertion: { type: string, maxLength: 16384, description: User JWT (jwt-bearer) or base64url SAML assertion }
+              additionalProperties: true
+      responses:
+        '200':
+          description: Token issued
+          headers:
+            Cache-Control: { schema: { type: string, example: no-store } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '400':
+          description: OAuth error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OAuthError' }
+        '401':
+          description: Client authentication failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OAuthError' }
+        '429':
+          description: Too many requests
+  /.well-known/jwks.json:
+    get:
+      operationId: jwks
+      security: []
+      responses:
+        '200':
+          description: Public signing keys
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [keys]
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      required: [kty, kid, use, alg, n, e]
+                      properties:
+                        kty: { type: string, enum: [RSA] }
+                        kid: { type: string }
+                        use: { type: string, enum: [sig] }
+                        alg: { type: string, enum: [RS256] }
+                        n: { type: string }
+                        e: { type: string }
+  /.well-known/openid-configuration:
+    get:
+      operationId: discovery
+      security: []
+      responses:
+        '200':
+          description: Authorization server metadata (subset)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [issuer, token_endpoint, jwks_uri, grant_types_supported]
+                properties:
+                  issuer: { type: string, format: uri }
+                  token_endpoint: { type: string, format: uri }
+                  jwks_uri: { type: string, format: uri }
+                  grant_types_supported: { type: array, items: { type: string } }
+                  token_endpoint_auth_methods_supported:
+                    type: array
+                    items: { type: string, enum: [client_secret_basic, client_secret_post] }
+components:
+  securitySchemes:
+    clientBasic:
+      type: http
+      scheme: basic
+  schemas:
+    TokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, enum: [Bearer] }
+        expires_in: { type: integer, minimum: 1, maximum: 900 }
+        scope: { type: string, example: spi.tech }
+    OAuthError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum: [invalid_request, invalid_client, invalid_grant, unauthorized_client, unsupported_grant_type, invalid_scope]
+        error_description: { type: string }
