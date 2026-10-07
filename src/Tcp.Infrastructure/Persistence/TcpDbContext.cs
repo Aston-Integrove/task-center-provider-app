@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Tcp.Domain.Identity;
 
 namespace Tcp.Infrastructure.Persistence;
 
@@ -8,6 +9,11 @@ namespace Tcp.Infrastructure.Persistence;
 /// </summary>
 public class TcpDbContext(DbContextOptions<TcpDbContext> options) : DbContext(options)
 {
+    public DbSet<ScimUser> ScimUsers => Set<ScimUser>();
+    public DbSet<ScimGroup> ScimGroups => Set<ScimGroup>();
+    public DbSet<ScimGroupMember> ScimGroupMembers => Set<ScimGroupMember>();
+    public DbSet<ScimAuditEntry> ScimAudit => Set<ScimAuditEntry>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TcpDbContext).Assembly);

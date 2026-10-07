@@ -62,6 +62,7 @@ paths:
         '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/User' } } } }
         '400': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
     patch:
       operationId: patchUser
       requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/PatchOp' } } } }
@@ -90,6 +91,7 @@ paths:
       requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
       responses:
         '201': { description: Created, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
+        '400': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
   /Groups/{id}:
     parameters:
@@ -105,16 +107,22 @@ paths:
       requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
       responses:
         '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
     patch:
       operationId: patchGroup
       requestBody: { required: true, content: { application/scim+json: { schema: { $ref: '#/components/schemas/PatchOp' } } } }
       responses:
         '200': { description: OK, content: { application/scim+json: { schema: { $ref: '#/components/schemas/Group' } } } }
         '204': { description: No content (when configured) }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
     delete:
       operationId: deleteGroup
       responses:
         '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/Error' }
 components:
   securitySchemes:
     bearer: { type: http, scheme: bearer, bearerFormat: JWT }

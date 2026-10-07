@@ -5,15 +5,16 @@ All tables in schema `idm`. Timestamps `datetime2(3)` UTC.
 ## `idm.ScimUser`
 | Column | Type | Notes |
 |---|---|---|
-| `Id` | `uniqueidentifier` PK | SCIM `id` |
+| `Id` | `uniqueidentifier` PK | SCIM `id` (= Global User ID when `Scim:UseGlobalUserIdAsId`) |
 | `UserName` | `nvarchar(256)` | unique (CI collation) |
-| `ExternalId` | `nvarchar(256)` null | |
+| `ExternalId` | `nvarchar(256)` null | binary collation (`externalId` filters are case-sensitive) |
 | `GlobalUserId` | `varchar(64)` null | **unique filtered index** (`WHERE GlobalUserId IS NOT NULL`); lower-case GUID |
 | `DisplayName` | `nvarchar(256)` null | |
 | `GivenName` | `nvarchar(128)` null | |
 | `FamilyName` | `nvarchar(128)` null | |
 | `PrimaryEmail` | `nvarchar(320)` null | index; denormalised from emails |
 | `EmailsJson` | `nvarchar(max)` | `ISJSON` check |
+| `EmailsSearch` | `nvarchar(2000)` | `\|type:value\|type:value\|`, CI collation; makes `emails.value` / `emails[type eq "x"].value` filters match every address, not just the primary one (added in implementation) |
 | `Active` | `bit` | default 1 |
 | `IsDeleted` | `bit` | soft delete (GDPR) |
 | `RawJson` | `nvarchar(max)` | last payload, redacted on delete |
@@ -48,3 +49,8 @@ All tables in schema `idm`. Timestamps `datetime2(3)` UTC.
 | `active` | `Active` |
 | `urn:ietf:params:scim:schemas:extension:sap:2.0:User.userUuid` | → `GlobalUserId` (FR-SCIM-07) |
 | `meta.created` / `meta.lastModified` | `Created` / `LastModified` |
+
+## GDPR erasure (FR-SCIM-12)
+`DELETE /Users/{id}` keeps the row but anonymises it in place: `UserName = deleted-<id>`, `ExternalId`, `GlobalUserId`,
+names, e-mails and `RawJson` cleared, `Active = 0`, `IsDeleted = 1`. Clearing `UserName` and `GlobalUserId` frees both
+unique indexes so IPS can re-provision the same person later. Group memberships are deleted in the same transaction.

@@ -1,0 +1,56 @@
+{
+  "description": "IPS group sync: create group with members, add and remove members with PATCH, look up by displayName, delete.",
+  "steps": [
+    {
+      "name": "create user 1", "method": "POST", "path": "/scim/v2/Users",
+      "body": { "schemas": [ "urn:ietf:params:scim:schemas:core:2.0:User" ], "userName": "grp1-{{rand}}", "externalId": "{{guid1}}" },
+      "capture": { "u1": "id" }, "expect": { "status": 201 }
+    },
+    {
+      "name": "create user 2", "method": "POST", "path": "/scim/v2/Users",
+      "body": { "schemas": [ "urn:ietf:params:scim:schemas:core:2.0:User" ], "userName": "grp2-{{rand}}", "externalId": "{{guid2}}" },
+      "capture": { "u2": "id" }, "expect": { "status": 201 }
+    },
+    {
+      "name": "search group - not found", "method": "GET",
+      "path": "/scim/v2/Groups?filter=displayName%20eq%20%22TC_{{rand}}%22",
+      "expect": { "status": 200, "body": { "totalResults": 0 } }
+    },
+    {
+      "name": "create group with member", "method": "POST", "path": "/scim/v2/Groups",
+      "body": {
+        "schemas": [ "urn:ietf:params:scim:schemas:core:2.0:Group" ],
+        "displayName": "TC_{{rand}}", "externalId": "g-{{rand}}", "members": [ { "value": "{{u1}}" } ]
+      },
+      "capture": { "gid": "id" },
+      "expect": { "status": 201, "body": { "members.0.value": "{{u1}}" } }
+    },
+    {
+      "name": "PATCH add member", "method": "PATCH", "path": "/scim/v2/Groups/{{gid}}",
+      "body": {
+        "schemas": [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
+        "Operations": [ { "op": "add", "path": "members", "value": [ { "value": "{{u2}}" } ] } ]
+      },
+      "expect": { "status": 200 }
+    },
+    {
+      "name": "both members present", "method": "GET", "path": "/scim/v2/Groups/{{gid}}",
+      "expect": { "status": 200, "body": { "members.length": 2 } }
+    },
+    {
+      "name": "PATCH remove member by filter", "method": "PATCH", "path": "/scim/v2/Groups/{{gid}}",
+      "body": {
+        "schemas": [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
+        "Operations": [ { "op": "remove", "path": "members[value eq \"{{u1}}\"]" } ]
+      },
+      "expect": { "status": 200, "body": { "members.length": 1, "members.0.value": "{{u2}}" } }
+    },
+    {
+      "name": "search group - found, members excluded", "method": "GET",
+      "path": "/scim/v2/Groups?excludedAttributes=members&filter=displayName%20eq%20%22TC_{{rand}}%22",
+      "expect": { "status": 200, "body": { "totalResults": 1, "Resources.0.id": "{{gid}}" } }
+    },
+    { "name": "delete group", "method": "DELETE", "path": "/scim/v2/Groups/{{gid}}", "expect": { "status": 204 } },
+    { "name": "members still exist", "method": "GET", "path": "/scim/v2/Users/{{u2}}", "expect": { "status": 200 } }
+  ]
+}

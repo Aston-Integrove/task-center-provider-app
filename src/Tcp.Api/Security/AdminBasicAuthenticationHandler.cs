@@ -12,6 +12,7 @@ public static class AuthSchemes
 {
     public const string Bearer = "Bearer";
     public const string AdminBasic = "AdminBasic";
+    public const string ScimBasic = "ScimBasic";
 }
 
 public static class Policies

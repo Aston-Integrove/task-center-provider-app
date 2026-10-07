@@ -1,0 +1,56 @@
+{
+  "description": "IPS initial load: look the user up by userName (miss), create it, look it up again (hit), read it by id.",
+  "steps": [
+    {
+      "name": "search by userName - not found yet",
+      "method": "GET",
+      "path": "/scim/v2/Users?filter=userName%20eq%20%22ips-{{rand}}%22&startIndex=1&count=100",
+      "expect": { "status": 200, "body": { "totalResults": 0, "schemas.0": "urn:ietf:params:scim:api:messages:2.0:ListResponse" } }
+    },
+    {
+      "name": "create user",
+      "method": "POST",
+      "path": "/scim/v2/Users",
+      "contentType": "application/scim+json",
+      "body": {
+        "schemas": [ "urn:ietf:params:scim:schemas:core:2.0:User", "urn:ietf:params:scim:schemas:extension:sap:2.0:User" ],
+        "externalId": "{{guid1}}",
+        "userName": "ips-{{rand}}",
+        "name": { "givenName": "Ida", "familyName": "Provisioned" },
+        "displayName": "Ida Provisioned",
+        "emails": [ { "value": "ida.{{rand}}@valterra.example", "type": "work", "primary": true } ],
+        "active": true,
+        "urn:ietf:params:scim:schemas:extension:sap:2.0:User": { "userUuid": "{{guid1}}", "userId": "P{{rand}}" }
+      },
+      "capture": { "userId": "id" },
+      "expect": {
+        "status": 201,
+        "body": {
+          "userName": "ips-{{rand}}",
+          "active": true,
+          "meta.resourceType": "User",
+          "urn:ietf:params:scim:schemas:extension:sap:2.0:User.userUuid": "{{guid1}}"
+        }
+      }
+    },
+    {
+      "name": "search by userName - found",
+      "method": "GET",
+      "path": "/scim/v2/Users?filter=userName%20eq%20%22ips-{{rand}}%22",
+      "expect": { "status": 200, "body": { "totalResults": 1, "Resources.0.id": "{{userId}}" } }
+    },
+    {
+      "name": "read by id",
+      "method": "GET",
+      "path": "/scim/v2/Users/{{userId}}",
+      "expect": { "status": 200, "body": { "displayName": "Ida Provisioned", "emails.0.value": "ida.{{rand}}@valterra.example" } }
+    },
+    {
+      "name": "re-create is a conflict",
+      "method": "POST",
+      "path": "/scim/v2/Users",
+      "body": { "schemas": [ "urn:ietf:params:scim:schemas:core:2.0:User" ], "userName": "ips-{{rand}}", "externalId": "{{guid2}}" },
+      "expect": { "status": 409, "body": { "scimType": "uniqueness" } }
+    }
+  ]
+}

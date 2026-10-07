@@ -64,7 +64,8 @@ public static class AuthServiceCollectionExtensions
         services.AddSingleton<IConfigureOptions<JwtBearerOptions>, BearerOptionsSetup>();
         services.AddAuthentication(AuthSchemes.Bearer)
             .AddJwtBearer(AuthSchemes.Bearer, _ => { })
-            .AddScheme<AuthenticationSchemeOptions, AdminBasicAuthenticationHandler>(AuthSchemes.AdminBasic, null);
+            .AddScheme<AuthenticationSchemeOptions, AdminBasicAuthenticationHandler>(AuthSchemes.AdminBasic, null)
+            .AddScheme<AuthenticationSchemeOptions, ScimBasicAuthenticationHandler>(AuthSchemes.ScimBasic, null);
 
         services.AddSingleton<IAuthorizationHandler, ScopeRequirementHandler>();
         services.AddSingleton<IAuthorizationHandler, UserContextRequirementHandler>();
@@ -79,8 +80,14 @@ public static class AuthServiceCollectionExtensions
                 .RequireAuthenticatedUser().AddRequirements(new ScopeRequirement(Scopes.SpiUser), new UserContextRequirement()))
             .AddPolicy(Policies.SpiAny, p => p.AddAuthenticationSchemes(AuthSchemes.Bearer)
                 .RequireAuthenticatedUser().AddRequirements(new ScopeRequirement(Scopes.SpiTech, Scopes.SpiUser)))
-            .AddPolicy(Policies.Scim, p => p.AddAuthenticationSchemes(AuthSchemes.Bearer)
-                .RequireAuthenticatedUser().AddRequirements(new ScopeRequirement(Scopes.Scim)));
+            .AddPolicy(Policies.Scim, p =>
+            {
+                // Basic is an opt-in fallback for IPS (Scim:AllowBasic, FR-SCIM-11).
+                p.AddAuthenticationSchemes(config.GetValue<bool>("Scim:AllowBasic")
+                    ? [AuthSchemes.Bearer, AuthSchemes.ScimBasic]
+                    : [AuthSchemes.Bearer]);
+                p.RequireAuthenticatedUser().AddRequirements(new ScopeRequirement(Scopes.Scim));
+            });
 
         return services;
     }

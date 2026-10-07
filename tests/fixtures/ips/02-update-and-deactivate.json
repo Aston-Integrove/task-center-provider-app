@@ -1,0 +1,57 @@
+{
+  "description": "IPS delta sync: full PUT update, PATCH with path, PATCH without path (boolean as string), deactivate, delete.",
+  "steps": [
+    {
+      "name": "create user",
+      "method": "POST",
+      "path": "/scim/v2/Users",
+      "body": {
+        "schemas": [ "urn:ietf:params:scim:schemas:core:2.0:User" ],
+        "userName": "upd-{{rand}}", "externalId": "{{guid1}}", "displayName": "Before", "active": true,
+        "emails": [ { "value": "upd.{{rand}}@valterra.example", "type": "work", "primary": true } ]
+      },
+      "capture": { "userId": "id" },
+      "expect": { "status": 201 }
+    },
+    {
+      "name": "PUT replaces attributes",
+      "method": "PUT",
+      "path": "/scim/v2/Users/{{userId}}",
+      "body": {
+        "schemas": [ "urn:ietf:params:scim:schemas:core:2.0:User" ],
+        "userName": "upd-{{rand}}", "externalId": "{{guid1}}", "displayName": "After", "active": true,
+        "name": { "givenName": "New", "familyName": "Name" },
+        "emails": [ { "value": "upd.{{rand}}@valterra.example", "type": "work", "primary": true } ]
+      },
+      "expect": { "status": 200, "body": { "displayName": "After", "name.givenName": "New" } }
+    },
+    {
+      "name": "PATCH with path",
+      "method": "PATCH",
+      "path": "/scim/v2/Users/{{userId}}",
+      "body": {
+        "schemas": [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
+        "Operations": [ { "op": "replace", "path": "name.familyName", "value": "Patched" } ]
+      },
+      "expect": { "status": 200, "body": { "name.familyName": "Patched", "name.givenName": "New" } }
+    },
+    {
+      "name": "PATCH without path, boolean as string",
+      "method": "PATCH",
+      "path": "/scim/v2/Users/{{userId}}",
+      "body": {
+        "schemas": [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
+        "Operations": [ { "op": "Replace", "value": { "active": "False" } } ]
+      },
+      "expect": { "status": 200, "body": { "active": false } }
+    },
+    {
+      "name": "deactivated user is still readable",
+      "method": "GET",
+      "path": "/scim/v2/Users/{{userId}}",
+      "expect": { "status": 200, "body": { "active": false } }
+    },
+    { "name": "delete", "method": "DELETE", "path": "/scim/v2/Users/{{userId}}", "expect": { "status": 204 } },
+    { "name": "gone", "method": "GET", "path": "/scim/v2/Users/{{userId}}", "expect": { "status": 404 } }
+  ]
+}

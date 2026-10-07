@@ -4,4 +4,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*" PrivateAssets="all" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tcp.UnitTests" />
+    <InternalsVisibleTo Include="Tcp.IntegrationTests" />
+  </ItemGroup>
 </Project>
