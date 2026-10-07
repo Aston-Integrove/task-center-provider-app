@@ -43,6 +43,40 @@ azd env get-values | grep APP_FQDN      # base URL for BTP destinations
 ```
 Then follow `docs/btp-setup-guide.md`.
 
+## Run locally
+
+Prerequisites: .NET 10 SDK, Docker.
+
+```bash
+docker compose up -d                       # SQL Server 2022 on localhost:1433
+dotnet run --project src/Tcp.Api           # Development env: auto-migrates, admin / dev-admin
+curl http://localhost:5000/healthz         # {"status":"Healthy"}  (port is printed on startup)
+curl -u admin:dev-admin "http://localhost:5000/admin/api/requests?prefix=/task-provider"
+```
+
+Tests:
+
+```bash
+dotnet test tests/Tcp.UnitTests
+dotnet test tests/Tcp.IntegrationTests     # starts its own SQL Server container (Testcontainers)
+dotnet test tests/Tcp.ContractTests
+```
+
+Local secrets: use `dotnet user-secrets` (project `Tcp.Api`) — never commit them. Key Vault is only used when `KeyVault__Uri` is set.
+
+## Deploy
+
+Prerequisites: Azure CLI, `azd`, PowerShell 7 (`pwsh`), go-sqlcmd (`winget install sqlcmd`).
+
+`azd up` runs `infra/hooks/preprovision.ps1` (resolves the deploying principal), provisions `infra/main.bicep`, runs `infra/hooks/postprovision.ps1` (SQL user for the managed identity, Key Vault secrets — idempotent, values never printed) and deploys the container.
+
+### GitHub Actions (OIDC)
+
+`ci.yml` builds and tests every PR; `deploy.yml` runs `azd deploy` on merges to `main`. Configure once:
+
+1. Create an Entra app registration with a federated credential for `repo:Aston-Integrove/task-center-provider-app:environment:dev` and grant it *Contributor* + *User Access Administrator* on the subscription (or the resource group).
+2. Add repository (or `dev` environment) **variables**: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_ENV_NAME`, `AZURE_LOCATION`. No secrets are needed.
+
 ## Tools
 - `tools/make-mvp-contract.py` — regenerates `spi-mvp.openapi.json` from the SAP file.
 

@@ -1,0 +1,103 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet restore Tcp.sln
+      - run: dotnet build Tcp.sln --no-restore -c Release
+      - name: Unit tests
+        run: dotnet test tests/Tcp.UnitTests --no-build -c Release --logger "trx;LogFileName=unit.trx"
+      # Integration tests start a SQL Server 2022 container via Testcontainers (Docker is preinstalled).
+      - name: Integration tests
+        run: dotnet test tests/Tcp.IntegrationTests --no-build -c Release --logger "trx;LogFileName=integration.trx"
+      - name: Contract tests
+        run: dotnet test tests/Tcp.ContractTests --no-build -c Release --logger "trx;LogFileName=contract.trx"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: "**/TestResults/*.trx"
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  bicep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bicep build (lint + compile)
+        run: az bicep build --file infra/main.bicep --stdout > /dev/null
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -f src/Tcp.Api/Dockerfile -t tcp-api:ci .
+      - name: Smoke test /healthz
+        run: |
+          docker run -d --name tcp -p 8080:8080 tcp-api:ci
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /tmp/health.json -w '%{http_code}' http://localhost:8080/healthz || true)
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+          cat /tmp/health.json
+          [ "$code" = "200" ] || { docker logs tcp; exit 1; }
+          grep -q Healthy /tmp/health.json
+      - name: Container runs as non-root
+        run: |
+          uid=$(docker inspect --format '{{.Config.User}}' tcp-api:ci)
+          echo "image user: $uid"
+          [ -n "$uid" ] && [ "$uid" != "root" ] && [ "$uid" != "0" ]
+
+  provision-preview:
+    # Only when the repository has Azure OIDC variables configured (see deploy.yml).
+    if: ${{ vars.AZURE_CLIENT_ID != '' && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Azure/setup-azd@v2
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+      - name: azd login (federated)
+        run: |
+          azd auth login --client-id "$AZURE_CLIENT_ID" --federated-credential-provider github --tenant-id "$AZURE_TENANT_ID"
+      - name: Provision preview
+        run: azd provision --preview --no-prompt

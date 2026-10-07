@@ -1,0 +1,54 @@
+name: deploy
+
+# Merges to main deploy to the `dev` environment. Authentication is OIDC (federated credential);
+# no Azure secret is stored in GitHub. One-time setup: docs/btp-setup-guide.md is for SAP; for Azure see README "Deploy".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Azure/setup-azd@v2
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+      - name: azd login (federated)
+        run: |
+          azd auth login --client-id "$AZURE_CLIENT_ID" --federated-credential-provider github --tenant-id "$AZURE_TENANT_ID"
+      - name: Select environment
+        run: |
+          azd env select "$AZURE_ENV_NAME" || azd env new "$AZURE_ENV_NAME" --location "${AZURE_LOCATION:-southafricanorth}" --subscription "$AZURE_SUBSCRIPTION_ID"
+      - name: Deploy
+        run: azd deploy --no-prompt
+      - name: Post-deploy health check
+        run: |
+          fqdn=$(azd env get-values | sed -n 's/^APP_FQDN=//p' | tr -d '"')
+          echo "Checking https://$fqdn/healthz"
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /tmp/health.json -w '%{http_code}' "https://$fqdn/healthz" || true)
+            [ "$code" = "200" ] && break
+            sleep 10
+          done
+          cat /tmp/health.json
+          [ "$code" = "200" ]
