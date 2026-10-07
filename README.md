@@ -21,6 +21,8 @@ Spec pack for a low-cost Azure prototype that plugs a non-SAP task source into *
 | 6 | `docs/delivery-plan.md` | How to run the SDD workflow, milestones, 4-week plan |
 | 7 | `specs/001…006/*` | Feature specs → plans → tasks → contracts |
 | 8 | `docs/btp-setup-guide.md` | BTP destinations, IPS, verification steps |
+| 9 | `docs/evidence/`, `docs/e2e-acceptance.md` | Spike templates and the 17 end-to-end scenarios (spec 006) |
+| 10 | `docs/production-gaps.md` | What the prototype deliberately leaves out |
 
 ## Feature specs
 
@@ -33,11 +35,16 @@ Spec pack for a low-cost Azure prototype that plugs a non-SAP task source into *
 | 005 Admin console + Open-in-App page | `specs/005-admin-console/` | generated from code |
 | 006 E2E integration (spikes, acceptance) | `specs/006-e2e-integration/` | — |
 
-## Quick start (once implemented)
+## Status
+
+Features **001-005 are implemented and covered by automated tests** (unit, contract against SAP's unmodified `TaskProviderV2.json`, integration on a real SQL Server container, and a real-browser smoke test of the admin UI). Feature **006** is operational work in Valterra's SAP landscape and has **not been run**: the spike templates, E2E checklist, budget alert and production-gap list are prepared (`docs/evidence/`, `docs/e2e-acceptance.md`, `docs/production-gaps.md`).
+
+## Quick start
 
 ```bash
 azd auth login
 azd env new dev --location southafricanorth
+azd env set AZURE_BUDGET_EMAIL you@example.com      # optional: monthly USD 25 budget alert
 azd up                                  # provision + deploy (~10–15 min)
 azd env get-values | grep APP_FQDN      # base URL for BTP destinations
 ```

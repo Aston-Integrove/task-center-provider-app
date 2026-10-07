@@ -7,6 +7,8 @@
     "principalId": { "value": "${AZURE_PRINCIPAL_ID}" },
     "principalName": { "value": "${AZURE_PRINCIPAL_NAME}" },
     "principalType": { "value": "${AZURE_PRINCIPAL_TYPE=User}" },
-    "minReplicas": { "value": "${AZURE_MIN_REPLICAS=1}" }
+    "minReplicas": { "value": "${AZURE_MIN_REPLICAS=1}" },
+    "budgetContactEmail": { "value": "${AZURE_BUDGET_EMAIL=}" },
+    "budgetAmount": { "value": "${AZURE_BUDGET_AMOUNT=25}" }
   }
 }

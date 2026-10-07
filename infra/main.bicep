@@ -20,6 +20,12 @@ param principalType string = 'User'
 @description('Keep 1 while the destination is enabled in Task Center; 0 otherwise.')
 param minReplicas int = 1
 
+@description('E-mail for the monthly budget alert (USD 25 by default). Empty = no budget is created.')
+param budgetContactEmail string = ''
+
+@description('Monthly budget amount; constitution V caps an environment at 25.')
+param budgetAmount int = 25
+
 var tags = { 'azd-env-name': environmentName, app: 'tc-provider' }
 var token = toLower(uniqueString(subscription().id, environmentName, location))
 
@@ -102,6 +108,12 @@ module app 'modules/container-app.bicep' = {
     publicBaseUrl: 'https://${appName}.${env.outputs.defaultDomain}'
     minReplicas: minReplicas
   }
+}
+
+module budget 'modules/budget.bicep' = if (!empty(budgetContactEmail)) {
+  scope: rg
+  name: 'budget'
+  params: { name: 'budget-${environmentName}', amount: budgetAmount, contactEmails: [budgetContactEmail] }
 }
 
 output AZURE_LOCATION string = location
