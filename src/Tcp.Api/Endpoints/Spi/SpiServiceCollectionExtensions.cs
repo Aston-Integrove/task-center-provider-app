@@ -11,6 +11,8 @@ public static class SpiServiceCollectionExtensions
         services.AddScoped<SpiTaskService>();
         services.AddSingleton<IPendingResponseQueue, PendingResponseQueue>();
         services.AddHostedService<AsyncResponseProcessor>();
+        services.AddSingleton<Tcp.Infrastructure.Html.HtmlDescriptionSanitizer>();
+        services.AddScoped<Admin.AdminTaskService>();
         return services;
     }
 }

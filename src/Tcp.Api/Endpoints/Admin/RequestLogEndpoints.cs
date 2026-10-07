@@ -2,15 +2,41 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Tcp.Api.Diagnostics;
 using Tcp.Api.Security;
+using Tcp.Domain.Tasks;
 
 namespace Tcp.Api.Endpoints.Admin;
 
 public static class RequestLogEndpoints
 {
+    /// <summary>Admin failures become RFC 9457 problem details with an <c>errors</c> list naming the offending fields.</summary>
+    private static async ValueTask<object?> ErrorFilter(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        try
+        {
+            return await next(context);
+        }
+        catch (AdminException ex)
+        {
+            return Problem(ex.Status, ex.Message, ex.Errors);
+        }
+        catch (TaskRuleViolation violation)
+        {
+            var ex = AdminException.FromRule(violation);
+            return Problem(ex.Status, ex.Message, ex.Errors);
+        }
+    }
+
+    private static IResult Problem(int status, string title, IReadOnlyList<AdminError> errors) =>
+        Results.Problem(title: title, statusCode: status, extensions: new Dictionary<string, object?>
+        {
+            ["errors"] = errors.Select(e => new { field = e.Field, message = e.Message }).ToArray(),
+        });
+
     public static RouteGroupBuilder MapAdminApi(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/admin/api")
             .RequireAuthorization(Policies.Admin);
+        group.AddEndpointFilter(ErrorFilter);
 
         // GET /admin/api/requests?prefix=/task-provider&status=200&limit=50
         group.MapGet("/requests", (IRequestLog log, string? prefix, int? status, int? limit) =>

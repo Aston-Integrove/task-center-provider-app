@@ -94,7 +94,7 @@ app.MapOAuthDiscovery();
 app.MapTokenEndpoint();
 app.MapScim();
 app.MapSpi();
-app.MapAdminApi().MapAdminDiagnostics();
+app.MapAdminApi().MapAdminDiagnostics().MapAdminTasks().MapAdminIdentity();
 foreach (var module in app.Services.GetServices<IEndpointModule>()) module.Map(app);
 
 app.Run();

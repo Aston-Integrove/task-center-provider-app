@@ -213,9 +213,9 @@ public static partial class SpiEndpoints
     }
 
     /// <summary>Raw or percent-encoded URN (a second decoding pass handles clients that double-encode).</summary>
-    private static string NormalizeUrn(string urn) => urn.Contains('%', StringComparison.Ordinal) ? Uri.UnescapeDataString(urn) : urn;
+    internal static string NormalizeUrn(string urn) => urn.Contains('%', StringComparison.Ordinal) ? Uri.UnescapeDataString(urn) : urn;
 
-    private static string? ParseUrn(string urn, UrnKind kind)
+    internal static string? ParseUrn(string urn, UrnKind kind)
     {
         var normalized = NormalizeUrn(urn);
         return Urn.TryParse(normalized, out var parsed) && parsed.Kind == kind ? normalized : null;

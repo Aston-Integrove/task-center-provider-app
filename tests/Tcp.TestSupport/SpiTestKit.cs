@@ -96,6 +96,52 @@ public sealed class SpiClient(HttpClient http, string basePath = "/task-provider
         new() { ["code"] = code, ["comment"] = comment, ["reasonCode"] = reasonCode };
 }
 
+public sealed record AdminResponse(HttpStatusCode Status, JsonNode? Body, HttpResponseMessage Raw, string RawText)
+{
+    /// <summary>Field names listed in the RFC 9457 <c>errors</c> extension.</summary>
+    public string[] ErrorFields => (Body?["errors"] as JsonArray)?.Select(e => e!["field"]!.GetValue<string>()).ToArray() ?? [];
+
+    public string[] ErrorMessages => (Body?["errors"] as JsonArray)?.Select(e => e!["message"]!.GetValue<string>()).ToArray() ?? [];
+}
+
+public sealed class AdminClient(HttpClient http)
+{
+    public HttpClient Http { get; } = http;
+
+    public async Task<AdminResponse> SendAsync(HttpMethod method, string path, JsonNode? body = null)
+    {
+        var request = new HttpRequestMessage(method, "/admin/api" + path);
+        if (body is not null) request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+        var response = await Http.SendAsync(request);
+        var text = await response.Content.ReadAsStringAsync();
+        JsonNode? json = null;
+        if (text.TrimStart().StartsWith('{') || text.TrimStart().StartsWith('['))
+        {
+            try { json = JsonNode.Parse(text); } catch (System.Text.Json.JsonException) { }
+        }
+        return new AdminResponse(response.StatusCode, json, response, text);
+    }
+
+    public Task<AdminResponse> Get(string path) => SendAsync(HttpMethod.Get, path);
+    public Task<AdminResponse> Post(string path, JsonNode? body = null) => SendAsync(HttpMethod.Post, path, body ?? new JsonObject());
+    public Task<AdminResponse> Patch(string path, JsonNode body) => SendAsync(HttpMethod.Patch, path, body);
+    public Task<AdminResponse> Delete(string path) => SendAsync(HttpMethod.Delete, path);
+
+    public static string Seg(string urn) => Uri.EscapeDataString(urn);
+
+    /// <summary>A minimal valid create request; callers override what they need.</summary>
+    public static JsonObject NewTask(string[] users, string[]? groups = null, string definition = "PR_APPROVAL", string? subject = null) => new()
+    {
+        ["definitionLocalId"] = definition,
+        ["recipients"] = new JsonObject
+        {
+            ["users"] = new JsonArray(users.Select(u => (JsonNode)u).ToArray()),
+            ["groups"] = new JsonArray((groups ?? []).Select(g => (JsonNode)g).ToArray()),
+        },
+        ["subject"] = new JsonObject { ["en-US"] = subject ?? "Approve PR " + Guid.NewGuid().ToString("N")[..6] },
+    };
+}
+
 /// <summary>
 /// An API host with a database of its own (one per key) and the real SPI wiring. Users and tasks are inserted
 /// directly so the tests control timestamps, ids and states exactly.
@@ -156,6 +202,14 @@ public sealed class SpiHost
     }
 
     public SpiClient Anonymous(string basePath = "/task-provider/v2") => new(Factory.CreateClient(), basePath);
+
+    /// <summary>HTTP client for <c>/admin/api</c> with the admin Basic credentials.</summary>
+    public AdminClient Admin()
+    {
+        var http = Factory.CreateClient();
+        http.DefaultRequestHeaders.Authorization = OAuthTestClient.Basic(TcpFactory.AdminUser, TcpFactory.AdminPassword);
+        return new AdminClient(http);
+    }
 
     // ---- database -----------------------------------------------------------------------------
 

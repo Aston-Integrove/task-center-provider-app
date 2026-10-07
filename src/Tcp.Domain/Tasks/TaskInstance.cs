@@ -152,6 +152,25 @@ public class TaskInstance
         Touch(nowUtc, userId);
     }
 
+    /// <summary>Provider-side: take the task out of the inbox without finishing it (status INACTIVE).</summary>
+    public void Deactivate(DateTime nowUtc, string? modifiedBy = null)
+    {
+        if (IsFinal) throw new TaskRuleViolation(SpiCodes.TaskFinal);
+        if (Status == TaskStatuses.Inactive) throw new TaskRuleViolation(SpiCodes.ActionNotValid);
+        Status = TaskStatuses.Inactive;
+        Processor = null;
+        Touch(nowUtc, modifiedBy);
+    }
+
+    /// <summary>Provider-side: bring an INACTIVE task back (status READY, unassigned).</summary>
+    public void Reactivate(DateTime nowUtc, string? modifiedBy = null)
+    {
+        if (IsFinal) throw new TaskRuleViolation(SpiCodes.TaskFinal);
+        if (Status != TaskStatuses.Inactive) throw new TaskRuleViolation(SpiCodes.ActionNotValid);
+        Status = TaskStatuses.Ready;
+        Touch(nowUtc, modifiedBy);
+    }
+
     /// <summary>Tombstone: GDPR forbids hard deletes while Task Center may hold the task (constitution VII).</summary>
     public void Cancel(DateTime nowUtc, string? modifiedBy = null)
     {
