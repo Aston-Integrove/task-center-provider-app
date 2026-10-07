@@ -9,7 +9,6 @@
     <PackageReference Include="xunit" Version="2.9.*" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.*" />
     <PackageReference Include="FluentAssertions" Version="7.*" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.*" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
@@ -17,5 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tcp.Api\Tcp.Api.csproj" />
+    <ProjectReference Include="..\Tcp.TestSupport\Tcp.TestSupport.csproj" />
   </ItemGroup>
 </Project>

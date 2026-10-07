@@ -1,11 +1,9 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
+using Tcp.Api.Auth;
 using Tcp.Api.Configuration;
+using Tcp.Api.Endpoints;
 using Tcp.Api.Diagnostics;
 using Tcp.Api.Endpoints.Admin;
 using Tcp.Api.Health;
@@ -43,28 +41,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddTcpHealth();
 
-// Authentication skeleton: Bearer validates tokens we issue (keys wired in feature 002; until then every
-// bearer token is rejected, i.e. fail closed). AdminBasic protects /admin/api.
-builder.Services
-    .AddAuthentication(AuthSchemes.Bearer)
-    .AddJwtBearer(AuthSchemes.Bearer, o =>
-    {
-        o.MapInboundClaims = false;
-        o.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = config["OAuth:Issuer"] ?? config["Provider:PublicBaseUrl"] ?? "unconfigured",
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            RequireSignedTokens = true,
-            ClockSkew = TimeSpan.FromSeconds(30),
-        };
-    })
-    .AddScheme<AuthenticationSchemeOptions, AdminBasicAuthenticationHandler>(AuthSchemes.AdminBasic, null);
-
-builder.Services.AddAuthorizationBuilder()
-    .SetFallbackPolicy(new AuthorizationPolicyBuilder(AuthSchemes.Bearer).RequireAuthenticatedUser().Build())
-    .AddPolicy(Policies.Admin, p => p.AddAuthenticationSchemes(AuthSchemes.AdminBasic).RequireAuthenticatedUser());
+builder.Services.AddTcpAuth(config);
 
 var app = builder.Build();
 
@@ -87,7 +64,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapTcpHealth();
-app.MapAdminApi();
+app.MapOAuthDiscovery();
+app.MapTokenEndpoint();
+app.MapAdminApi().MapAdminDiagnostics();
+foreach (var module in app.Services.GetServices<IEndpointModule>()) module.Map(app);
 
 app.Run();
 

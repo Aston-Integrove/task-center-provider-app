@@ -6,6 +6,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Tcp.Infrastructure.Persistence;
+using Tcp.TestSupport;
 
 namespace Tcp.IntegrationTests;
 

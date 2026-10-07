@@ -17,5 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tcp.Api\Tcp.Api.csproj" />
+    <ProjectReference Include="..\Tcp.TestSupport\Tcp.TestSupport.csproj" />
   </ItemGroup>
 </Project>

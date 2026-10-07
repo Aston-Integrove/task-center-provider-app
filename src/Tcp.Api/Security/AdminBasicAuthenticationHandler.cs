@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -18,6 +17,10 @@ public static class AuthSchemes
 public static class Policies
 {
     public const string Admin = "admin";
+    public const string SpiTech = "spi.tech";
+    public const string SpiUser = "spi.user";
+    public const string SpiAny = "spi.any";
+    public const string Scim = "scim";
 }
 
 /// <summary>HTTP Basic authentication for the admin API (prototype). Fails closed when no password is configured.</summary>
@@ -59,8 +62,8 @@ public sealed class AdminBasicAuthenticationHandler(
             return Task.FromResult(AuthenticateResult.Fail("Admin access not configured"));
 
         // Evaluate both comparisons so timing does not reveal which one failed.
-        var userOk = ConstantTimeEquals(user, cfg.BasicUser);
-        var passOk = ConstantTimeEquals(password, cfg.Password);
+        var userOk = ConstantTime.Equals(user, cfg.BasicUser);
+        var passOk = ConstantTime.Equals(password, cfg.Password);
         if (!(userOk & passOk))
             return Task.FromResult(AuthenticateResult.Fail("Invalid credentials"));
 
@@ -76,8 +79,4 @@ public sealed class AdminBasicAuthenticationHandler(
         Response.StatusCode = StatusCodes.Status401Unauthorized;
         return Task.CompletedTask;
     }
-
-    internal static bool ConstantTimeEquals(string a, string b) =>
-        CryptographicOperations.FixedTimeEquals(SHA256.HashData(Encoding.UTF8.GetBytes(a)),
-                                                SHA256.HashData(Encoding.UTF8.GetBytes(b)));
 }
