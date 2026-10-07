@@ -49,6 +49,25 @@ public static class AdminTasksEndpoints
         admin.MapPost("/tasks/generate", async (HttpContext http, GenerateTasksRequest request, AdminTaskService service) =>
             Results.Ok(await service.GenerateAsync(request, http.RequestAborted)));
 
+        // GET /admin/api/definitions: what the "New task" form needs (attribute codes/types, responses, actions)
+        admin.MapGet("/definitions", async (HttpContext http, DefinitionRepository definitions) =>
+        {
+            var all = await definitions.ListAsync(0, 100, http.RequestAborted);
+            return Results.Ok(new JsonArray(all.Select(d => (JsonNode)new JsonObject
+            {
+                ["localId"] = d.LocalId,
+                ["urn"] = d.Urn,
+                ["name"] = LocalizedTextSelector.Select(d.Name, ["en-US"], "en-US").FirstOrDefault()?.Text ?? d.LocalId,
+                ["attributes"] = new JsonArray(d.CustomAttributes.OrderByDescending(a => a.Rank).Select(a => (JsonNode)new JsonObject
+                {
+                    ["code"] = a.Code, ["type"] = a.Type,
+                    ["name"] = LocalizedTextSelector.Select(a.Name, ["en-US"], "en-US").FirstOrDefault()?.Text ?? a.Code,
+                }).ToArray()),
+                ["responses"] = new JsonArray(d.Responses.Select(r => (JsonNode)r.Code).ToArray()),
+                ["actions"] = new JsonArray(d.Actions.Select(a => (JsonNode)a.Code).ToArray()),
+            }).ToArray()));
+        });
+
         admin.MapGet("/tasks", ListAsync);
         admin.MapGet("/tasks/{urn}", DetailAsync);
         return admin;

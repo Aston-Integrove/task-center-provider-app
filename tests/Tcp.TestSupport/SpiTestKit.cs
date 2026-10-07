@@ -160,7 +160,7 @@ public sealed class SpiHost
     public CapturingLoggerProvider Logs { get; } = new();
     public static TestIssuer Oidc { get; } = new();
 
-    private SpiHost(string connectionString, Dictionary<string, string?> settings, Action<IServiceCollection>? configureServices)
+    private SpiHost(string connectionString, Dictionary<string, string?> settings, Action<IServiceCollection>? configureServices, bool kestrel = false)
     {
         var logs = Logs;
         Factory = new TcpFactory(connectionString, settings,
@@ -170,6 +170,11 @@ public sealed class SpiHost
                 configureServices?.Invoke(services);
             },
             issuers: [Oidc]);
+        if (kestrel)
+        {
+            Factory.UseKestrel(0); // a real socket, for browser tests; must precede server start
+            Factory.StartServer();
+        }
     }
 
     public static SpiHost Get(SqlServerFixture sql, string key, Dictionary<string, string?>? settings = null, Action<IServiceCollection>? configureServices = null) =>
@@ -177,8 +182,9 @@ public sealed class SpiHost
             new SpiHost(sql.ConnectionString("spi_" + key.Replace('-', '_')), settings ?? [], configureServices))).Value;
 
     /// <summary>A brand-new database, for tests that look at "all tasks" and must not see anyone else's.</summary>
-    public static SpiHost Isolated(SqlServerFixture sql, Dictionary<string, string?>? settings = null) =>
-        Get(sql, "iso_" + Guid.NewGuid().ToString("N")[..12], settings);
+    public static SpiHost Isolated(SqlServerFixture sql, Dictionary<string, string?>? settings = null, bool kestrel = false) =>
+        Hosts.GetOrAdd("iso_" + Guid.NewGuid().ToString("N")[..12], key => new Lazy<SpiHost>(() =>
+            new SpiHost(sql.ConnectionString("spi_" + key), settings ?? [], null, kestrel))).Value;
 
     public static string TaskUrn(string localId) => Urn.Build(UrnKind.Task, AppId, InstanceId, Tenant, localId).Value;
     public static string DefinitionUrn(string localId) => Urn.Build(UrnKind.TaskDefinition, AppId, InstanceId, Tenant, localId).Value;
@@ -220,7 +226,7 @@ public sealed class SpiHost
     public async Task<T> DbAsync<T>(Func<TcpDbContext, Task<T>> action)
     {
         await using var scope = Factory.Services.CreateAsyncScope();
-        _ = Factory.Server; // make sure the host (and its migrations) is running
+        _ = Factory.Services; // make sure the host (and its migrations) is running
         return await action(scope.ServiceProvider.GetRequiredService<TcpDbContext>());
     }
 

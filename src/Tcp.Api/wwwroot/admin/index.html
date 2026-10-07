@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Integrove TP - Admin</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Integrove TP <span class="muted">admin console</span></h1>
+    <nav id="tabs" aria-label="Sections">
+      <button data-tab="tasks" class="active">Tasks</button>
+      <button data-tab="new">New task</button>
+      <button data-tab="users">Users</button>
+      <button data-tab="groups">Groups</button>
+      <button data-tab="requests">Requests</button>
+      <button data-tab="operations">Operations</button>
+      <button data-tab="diagnostics">Diagnostics</button>
+    </nav>
+  </header>
+
+  <div id="banner" class="banner" role="alert" hidden></div>
+
+  <main>
+    <section id="tab-tasks" class="tab" data-tab="tasks">
+      <form id="task-filter" class="filters">
+        <label>Status <select name="status"><option value="">any</option></select></label>
+        <label>Definition <input name="definition" placeholder="PR_APPROVAL"></label>
+        <label>User <input name="user" placeholder="Global User ID"></label>
+        <label>Search <input name="search" placeholder="subject or id"></label>
+        <button type="submit">Filter</button>
+      </form>
+      <table id="task-table"><thead><tr>
+        <th>Subject</th><th>Status</th><th>Priority</th><th>Type</th><th>Processor</th><th>Modified</th><th>Rcpt</th><th></th>
+      </tr></thead><tbody></tbody></table>
+      <div class="pager"><button id="task-prev">Previous</button> <span id="task-range" class="muted"></span> <button id="task-next">Next</button></div>
+      <div id="task-detail" class="panel" hidden></div>
+    </section>
+
+    <section id="tab-new" class="tab" data-tab="new" hidden>
+      <div class="cols">
+        <form id="new-task" class="stack">
+          <h2>New task</h2>
+          <label>Definition <select name="definitionLocalId"></select></label>
+          <label>Users <input name="users" placeholder="Global User ID or e-mail, comma separated"></label>
+          <label>Groups <input name="groups" placeholder="IAS group names, comma separated"></label>
+          <label>Subject (en-US) <input name="subjectEn" required maxlength="255" placeholder="Approve PR 4711 - Laptop"></label>
+          <label>Subject (de-DE) <input name="subjectDe" maxlength="255"></label>
+          <div class="row">
+            <label>Priority <select name="priority"><option>MEDIUM</option><option>LOW</option><option>HIGH</option><option>VERY_HIGH</option></select></label>
+            <label>Due <input type="datetime-local" name="dueAt"></label>
+          </div>
+          <fieldset><legend>Custom attributes</legend><div id="attribute-fields" class="stack"></div></fieldset>
+          <label>Description (HTML, sanitised on save) <textarea name="description" rows="5"></textarea></label>
+          <button type="submit">Create task</button>
+          <pre id="new-result" class="result" hidden></pre>
+        </form>
+
+        <form id="generate" class="stack">
+          <h2>Bulk generator</h2>
+          <label>Count (1 - 10 000) <input type="number" name="count" min="1" max="10000" value="100"></label>
+          <label>Definition <select name="definitionLocalId"><option value="">random mix</option></select></label>
+          <label>Users <input name="users" placeholder="Global User ID or e-mail, comma separated"></label>
+          <label>Groups <input name="groups"></label>
+          <label class="check"><input type="checkbox" name="sameTimestamp"> identical modifiedAt (exercises <code>lastId</code> paging)</label>
+          <button type="submit">Generate</button>
+          <pre id="generate-result" class="result" hidden></pre>
+        </form>
+      </div>
+    </section>
+
+    <section id="tab-users" class="tab" data-tab="users" hidden>
+      <form id="user-filter" class="filters"><label>Search <input name="search"></label><button type="submit">Search</button></form>
+      <table id="user-table"><thead><tr><th>User name</th><th>Name</th><th>E-mail</th><th>Global User ID</th><th>Active</th><th>Groups</th></tr></thead><tbody></tbody></table>
+      <p id="user-total" class="muted"></p>
+    </section>
+
+    <section id="tab-groups" class="tab" data-tab="groups" hidden>
+      <table id="group-table"><thead><tr><th>Group</th><th>Members</th><th>Member names</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section id="tab-requests" class="tab" data-tab="requests" hidden>
+      <form id="request-filter" class="filters">
+        <label>Path <select name="prefix">
+          <option value="">all integration traffic</option><option value="/oauth">/oauth</option><option value="/scim">/scim</option>
+          <option value="/task-provider">/task-provider</option><option value="/api/task-provider">/api/task-provider</option></select></label>
+        <label>Status <input name="status" size="4" placeholder="200"></label>
+        <label class="check"><input type="checkbox" id="auto-refresh" checked> refresh every 5 s</label>
+        <button type="submit">Refresh</button>
+      </form>
+      <table id="request-table"><thead><tr><th>Time</th><th>Method</th><th>Path</th><th>Status</th><th>ms</th><th>Client</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section id="tab-operations" class="tab" data-tab="operations" hidden>
+      <table id="operation-table"><thead><tr><th>When</th><th>Task</th><th>Operation</th><th>User</th><th>Outcome</th><th>Comment</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section id="tab-diagnostics" class="tab" data-tab="diagnostics" hidden>
+      <div class="cols">
+        <div class="stack">
+          <h2>Technical token</h2>
+          <p class="muted">The token Task Center's destination would receive (client credentials, <code>tc-tech</code>).</p>
+          <button id="get-token">Get technical token</button>
+          <pre id="token-result" class="result" hidden></pre>
+        </div>
+        <form id="simulate" class="stack">
+          <h2>Simulate pull</h2>
+          <label>modifiedAfter <input name="modifiedAfter" placeholder="2026-01-01T00:00:00.000Z"></label>
+          <label>lastId <input name="lastId" placeholder="task URN"></label>
+          <label>$top <input type="number" name="top" value="10" min="1" max="1000"></label>
+          <label>languages <input name="languages" value="en-US,de-DE"></label>
+          <button type="submit">Simulate GET /tasks</button>
+          <pre id="simulate-result" class="result" hidden></pre>
+        </form>
+        <form id="decode" class="stack">
+          <h2>Decode assertion</h2>
+          <label>User JWT <textarea name="assertion" rows="5" spellcheck="false"></textarea></label>
+          <button type="submit">Decode</button>
+          <pre id="decode-result" class="result" hidden></pre>
+        </form>
+      </div>
+    </section>
+  </main>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

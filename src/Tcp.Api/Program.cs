@@ -52,6 +52,7 @@ builder.Services.AddScimInfrastructure();
 builder.Services.AddTaskInfrastructure();
 builder.Services.AddSpi(config);
 builder.Services.AddTcpAppAuth(config);
+builder.Services.AddOpenApi(); // contract of our own endpoints, generated from code (ADR-001); served to admins only
 
 var app = builder.Build();
 
@@ -97,6 +98,8 @@ app.MapTokenEndpoint();
 app.MapScim();
 app.MapSpi();
 app.MapApp();
+app.MapAdminUi();
+app.MapOpenApi("/admin/openapi/{documentName}.json").RequireAuthorization(Policies.Admin);
 app.MapAdminApi().MapAdminDiagnostics().MapAdminTasks().MapAdminIdentity();
 foreach (var module in app.Services.GetServices<IEndpointModule>()) module.Map(app);
 
