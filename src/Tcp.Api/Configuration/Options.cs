@@ -59,3 +59,31 @@ public sealed class SpiOptions
     /// <summary>With AsyncResponses: response codes that fail and surface as operationErrors.</summary>
     public List<string> SimulateFailureCodes { get; set; } = [];
 }
+
+public sealed class AppOptions
+{
+    public const string Section = "App";
+    public const string BasicMode = "Basic";
+    public const string OidcMode = "IasOidc";
+
+    /// <summary><c>Basic</c> (admin Basic auth, read-only page) or <c>IasOidc</c> (SAP IAS login, entitled users may act).</summary>
+    public string Auth { get; set; } = BasicMode;
+
+    public bool IsOidc => string.Equals(Auth, OidcMode, StringComparison.OrdinalIgnoreCase);
+
+    public AppOidcOptions Oidc { get; set; } = new();
+}
+
+public sealed class AppOidcOptions
+{
+    /// <summary>IAS tenant URL, e.g. https://&lt;tenant&gt;.accounts.ondemand.com</summary>
+    public string Authority { get; set; } = "";
+
+    public string ClientId { get; set; } = "";
+
+    /// <summary>Client secret; in Azure the Key Vault secret <c>ias-oidc-client-secret</c> (config <c>Secrets:ias-oidc-client-secret</c>).</summary>
+    public string? ClientSecret { get; set; }
+
+    /// <summary>Claim carrying the Global User ID; other claims (email, sub) are used as fallbacks by the resolver.</summary>
+    public string UserIdClaim { get; set; } = "user_uuid";
+}

@@ -160,17 +160,21 @@ public sealed class SpiHost
     public CapturingLoggerProvider Logs { get; } = new();
     public static TestIssuer Oidc { get; } = new();
 
-    private SpiHost(string connectionString, Dictionary<string, string?> settings)
+    private SpiHost(string connectionString, Dictionary<string, string?> settings, Action<IServiceCollection>? configureServices)
     {
         var logs = Logs;
         Factory = new TcpFactory(connectionString, settings,
-            services => services.AddLogging(b => b.AddProvider(logs)),
+            services =>
+            {
+                services.AddLogging(b => b.AddProvider(logs));
+                configureServices?.Invoke(services);
+            },
             issuers: [Oidc]);
     }
 
-    public static SpiHost Get(SqlServerFixture sql, string key, Dictionary<string, string?>? settings = null) =>
+    public static SpiHost Get(SqlServerFixture sql, string key, Dictionary<string, string?>? settings = null, Action<IServiceCollection>? configureServices = null) =>
         Hosts.GetOrAdd(key, _ => new Lazy<SpiHost>(() =>
-            new SpiHost(sql.ConnectionString("spi_" + key.Replace('-', '_')), settings ?? []))).Value;
+            new SpiHost(sql.ConnectionString("spi_" + key.Replace('-', '_')), settings ?? [], configureServices))).Value;
 
     /// <summary>A brand-new database, for tests that look at "all tasks" and must not see anyone else's.</summary>
     public static SpiHost Isolated(SqlServerFixture sql, Dictionary<string, string?>? settings = null) =>

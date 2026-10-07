@@ -8,6 +8,7 @@ using Tcp.Api.Diagnostics;
 using Tcp.Api.Endpoints.Admin;
 using Tcp.Api.Health;
 using Tcp.Api.Security;
+using Tcp.Api.Endpoints.App;
 using Tcp.Api.Endpoints.Scim;
 using Tcp.Api.Endpoints.Spi;
 using Tcp.Infrastructure.Persistence;
@@ -50,6 +51,7 @@ builder.Services.Configure<ScimOptions>(config.GetSection(ScimOptions.Section));
 builder.Services.AddScimInfrastructure();
 builder.Services.AddTaskInfrastructure();
 builder.Services.AddSpi(config);
+builder.Services.AddTcpAppAuth(config);
 
 var app = builder.Build();
 
@@ -94,6 +96,7 @@ app.MapOAuthDiscovery();
 app.MapTokenEndpoint();
 app.MapScim();
 app.MapSpi();
+app.MapApp();
 app.MapAdminApi().MapAdminDiagnostics().MapAdminTasks().MapAdminIdentity();
 foreach (var module in app.Services.GetServices<IEndpointModule>()) module.Map(app);
 

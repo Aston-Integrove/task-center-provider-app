@@ -11,6 +11,7 @@
     <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.*" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.*" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.*" />
   </ItemGroup>
   <ItemGroup>
     <!-- single source of truth for the seed definitions lives with the spec -->

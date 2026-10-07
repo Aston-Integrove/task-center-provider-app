@@ -13,6 +13,8 @@ public static class AuthSchemes
     public const string Bearer = "Bearer";
     public const string AdminBasic = "AdminBasic";
     public const string ScimBasic = "ScimBasic";
+    public const string AppOidc = "AppOidc";
+    public const string AppCookie = "AppCookie";
 }
 
 public static class Policies
@@ -22,6 +24,7 @@ public static class Policies
     public const string SpiUser = "spi.user";
     public const string SpiAny = "spi.any";
     public const string Scim = "scim";
+    public const string App = "app";
 }
 
 /// <summary>HTTP Basic authentication for the admin API (prototype). Fails closed when no password is configured.</summary>
