@@ -1,0 +1,13 @@
+bin/
+obj/
+*.user
+.vs/
+.idea/
+TestResults/
+coverage/
+.azure/
+*.log
+.env
+appsettings.Local.json
+secrets.json
+node_modules/
