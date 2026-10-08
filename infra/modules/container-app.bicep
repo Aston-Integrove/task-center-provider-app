@@ -81,7 +81,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-var secretsUser = '4633458b-17de-408a-b874-0e0b6abdb3b9'
+var secretsUser = '4633458b-17de-408a-b874-0445c86b69e6'
 
 resource kvRead 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(kv.id, app.id, secretsUser)
