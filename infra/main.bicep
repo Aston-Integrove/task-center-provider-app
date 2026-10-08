@@ -32,6 +32,9 @@ param resourceGroupName string = ''
 @description('true = the resource group already exists (e.g. created by an admin); it is used as is and not created or re-tagged. It must be in the same region as "location".')
 param useExistingResourceGroup bool = false
 
+@description('Azure SQL server name (globally unique, lowercase letters, digits and hyphens). Empty = sql-<token>.')
+param sqlServerName string = ''
+
 var tags = { 'azd-env-name': environmentName, app: 'tc-provider' }
 var token = toLower(uniqueString(subscription().id, environmentName, location))
 var rgName = empty(resourceGroupName) ? 'rg-${environmentName}' : resourceGroupName
@@ -89,7 +92,7 @@ module sql 'modules/sql.bicep' = {
   name: 'sql'
   dependsOn: [rgCreate]
   params: {
-    serverName: 'sql-${token}'
+    serverName: empty(sqlServerName) ? 'sql-${token}' : sqlServerName
     location: location
     tags: tags
     adminLogin: principalName
