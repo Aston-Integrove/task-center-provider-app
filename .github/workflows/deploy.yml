@@ -37,6 +37,14 @@ jobs:
             echo "::error::Missing GitHub variable(s):$missing. Add them under Settings > Environments > dev > Environment variables (or repository variables). See docs/deploy-pipeline-setup.md."
             exit 1
           fi
+          bad=""
+          for v in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID; do
+            printf '%s' "${!v}" | grep -Eqx '[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}' || bad="$bad $v"
+          done
+          if [ -n "$bad" ]; then
+            echo "::error::Not a bare GUID (no braces, quotes, spaces or line breaks):$bad. Re-set the variable with only the id."
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - uses: Azure/setup-azd@v2
       - uses: azure/login@v2
