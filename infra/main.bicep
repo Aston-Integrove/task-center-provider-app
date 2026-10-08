@@ -26,24 +26,37 @@ param budgetContactEmail string = ''
 @description('Monthly budget amount; constitution V caps an environment at 25.')
 param budgetAmount int = 25
 
+@description('Resource group name. Empty = rg-<environmentName>.')
+param resourceGroupName string = ''
+
+@description('true = the resource group already exists (e.g. created by an admin); it is used as is and not created or re-tagged. It must be in the same region as "location".')
+param useExistingResourceGroup bool = false
+
 var tags = { 'azd-env-name': environmentName, app: 'tc-provider' }
 var token = toLower(uniqueString(subscription().id, environmentName, location))
+var rgName = empty(resourceGroupName) ? 'rg-${environmentName}' : resourceGroupName
 
-resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
-  name: 'rg-${environmentName}'
+resource rgCreate 'Microsoft.Resources/resourceGroups@2024-03-01' = if (!useExistingResourceGroup) {
+  name: rgName
   location: location
   tags: tags
+}
+
+resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' existing = {
+  name: rgName
 }
 
 module logs 'modules/log-analytics.bicep' = {
   scope: rg
   name: 'logs'
+  dependsOn: [rgCreate]
   params: { name: 'log-${token}', location: location, tags: tags }
 }
 
 module pullIdentity 'modules/identity.bicep' = {
   scope: rg
   name: 'pull-identity'
+  dependsOn: [rgCreate]
   params: { name: 'id-acrpull-${token}', location: location, tags: tags }
 }
 
@@ -61,6 +74,7 @@ module registry 'modules/container-registry.bicep' = {
 module vault 'modules/key-vault.bicep' = {
   scope: rg
   name: 'vault'
+  dependsOn: [rgCreate]
   params: {
     name: 'kv-${take(token, 20)}'
     location: location
@@ -73,6 +87,7 @@ module vault 'modules/key-vault.bicep' = {
 module sql 'modules/sql.bicep' = {
   scope: rg
   name: 'sql'
+  dependsOn: [rgCreate]
   params: {
     serverName: 'sql-${token}'
     location: location
@@ -113,6 +128,7 @@ module app 'modules/container-app.bicep' = {
 module budget 'modules/budget.bicep' = if (!empty(budgetContactEmail)) {
   scope: rg
   name: 'budget'
+  dependsOn: [rgCreate]
   params: { name: 'budget-${environmentName}', amount: budgetAmount, contactEmails: [budgetContactEmail] }
 }
 
