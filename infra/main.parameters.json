@@ -8,6 +8,9 @@
     "principalType": { "value": "${AZURE_PRINCIPAL_TYPE=User}" },
     "resourceGroupName": { "value": "${AZURE_RESOURCE_GROUP=}" },
     "useExistingResourceGroup": { "value": "${AZURE_USE_EXISTING_RESOURCE_GROUP=false}" },
+    "appAuth": { "value": "${AZURE_APP_AUTH=Basic}" },
+    "iasAuthority": { "value": "${AZURE_IAS_AUTHORITY=}" },
+    "iasClientId": { "value": "${AZURE_IAS_CLIENT_ID=}" },
     "minReplicas": { "value": "${AZURE_MIN_REPLICAS=1}" },
     "budgetContactEmail": { "value": "${AZURE_BUDGET_EMAIL=}" },
     "budgetAmount": { "value": "${AZURE_BUDGET_AMOUNT=25}" }

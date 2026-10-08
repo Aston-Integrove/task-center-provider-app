@@ -14,6 +14,16 @@ param principalId string
 @allowed(['User', 'ServicePrincipal'])
 param principalType string = 'User'
 
+@allowed(['Basic', 'IasOidc'])
+@description('"Open in App" sign-in: Basic (admin credentials) or IasOidc (SAP IAS login). The IAS client secret is the Key Vault secret ias-oidc-client-secret.')
+param appAuth string = 'Basic'
+
+@description('IAS tenant URL, e.g. https://<tenant>.accounts.ondemand.com (only used with IasOidc).')
+param iasAuthority string = ''
+
+@description('Client ID of the IAS application (only used with IasOidc).')
+param iasClientId string = ''
+
 @description('Keep 1 while the destination is enabled in Task Center; 0 otherwise.')
 param minReplicas int = 1
 
@@ -119,6 +129,11 @@ module app 'modules/container-app.bicep' = {
     storageMountName: env.outputs.storageMountName
     publicBaseUrl: 'https://${appName}.${env.outputs.defaultDomain}'
     minReplicas: minReplicas
+    extraEnv: appAuth == 'IasOidc' ? [
+      { name: 'App__Auth', value: 'IasOidc' }
+      { name: 'App__Oidc__Authority', value: iasAuthority }
+      { name: 'App__Oidc__ClientId', value: iasClientId }
+    ] : []
   }
 }
 

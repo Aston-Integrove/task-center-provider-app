@@ -97,6 +97,19 @@ gh run watch
 Success looks like: login, *Load provisioned resources*, *Deploy*, then *Post-deploy health check* printing
 `{"status":"Healthy"}`. Every later merge to `main` deploys automatically.
 
+## Optional: SAP IAS sign-in for "Open in App"
+
+By default `/app/tasks/{urn}` asks for the admin credentials. To sign users in through SAP IAS instead, create an OpenID
+Connect application in IAS with the redirect URI `https://<app fqdn>/app/signin-oidc` and a client secret, then:
+
+```powershell
+az keyvault secret set --vault-name <AZURE_KEY_VAULT_NAME> --name ias-oidc-client-secret --value "<secret>"
+azd env set AZURE_APP_AUTH IasOidc
+azd env set AZURE_IAS_AUTHORITY https://<tenant>.accounts.ondemand.com
+azd env set AZURE_IAS_CLIENT_ID <client id>
+azd provision            # writes App__Auth / App__Oidc__* into the container app; they now survive re-provisioning
+```
+
 ## Troubleshooting
 
 | Message | Cause and fix |
