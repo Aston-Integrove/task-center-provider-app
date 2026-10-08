@@ -25,11 +25,12 @@ jobs:
       AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
     steps:
       - name: Check configuration
         run: |
           missing=""
-          for v in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_ENV_NAME; do
+          for v in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_ENV_NAME AZURE_RESOURCE_GROUP; do
             [ -z "${!v}" ] && missing="$missing $v"
           done
           if [ -n "$missing" ]; then
@@ -49,10 +50,18 @@ jobs:
       - name: Select environment
         run: |
           azd env select "$AZURE_ENV_NAME" || azd env new "$AZURE_ENV_NAME" --location "${AZURE_LOCATION:-southafricanorth}" --subscription "$AZURE_SUBSCRIPTION_ID"
-      # A fresh CI environment is empty. Infrastructure is provisioned once with `azd up` from a developer machine; this
-      # pulls the resulting resource names (resource group, registry, container app) from the last deployment.
+      # A fresh CI environment is empty. Infrastructure is provisioned once with `azd up` from a developer machine. The
+      # pipeline identity only has Contributor on the resource group (it cannot read subscription-level deployments, so
+      # `azd env refresh` would fail); look the resources up inside the group instead.
       - name: Load provisioned resources
-        run: azd env refresh --no-prompt
+        run: |
+          rg="$AZURE_RESOURCE_GROUP"
+          acr=$(az acr list -g "$rg" --query "[0].loginServer" -o tsv)
+          fqdn=$(az containerapp list -g "$rg" --query "[0].properties.configuration.ingress.fqdn" -o tsv)
+          [ -n "$acr" ] && [ -n "$fqdn" ] || { echo "::error::No container registry or container app in $rg. Run 'azd up' once from a developer machine."; exit 1; }
+          azd env set AZURE_RESOURCE_GROUP "$rg"
+          azd env set AZURE_CONTAINER_REGISTRY_ENDPOINT "$acr"
+          azd env set APP_FQDN "$fqdn"
       - name: Deploy
         run: azd deploy --no-prompt
       - name: Post-deploy health check
