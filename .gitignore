@@ -11,3 +11,8 @@ coverage/
 appsettings.Local.json
 secrets.json
 node_modules/
+
+# Local SQLite database (dotnet run)
+*.db
+*.db-shm
+*.db-wal
