@@ -111,7 +111,7 @@ public static class AdminTasksEndpoints
         {
             var pattern = SqlLike.Contains(search);
             query = query.Where(t => EF.Functions.Like(t.SubjectJson, pattern, SqlLike.EscapeCharacter) ||
-                                     EF.Functions.Like(EF.Functions.Collate(t.LocalId, "SQL_Latin1_General_CP1_CI_AS"), pattern, SqlLike.EscapeCharacter));
+                                     EF.Functions.Like(t.LocalId, pattern, SqlLike.EscapeCharacter)); // SQLite LIKE ignores case (ASCII)
         }
 
         var top = ReadInt(q["top"].FirstOrDefault(), "top", 50, 1, 500);

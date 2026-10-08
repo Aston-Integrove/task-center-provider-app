@@ -7,7 +7,7 @@ Spec pack for a low-cost Azure prototype that plugs a non-SAP task source into *
 2. Minimal **SCIM 2.0** API so SAP Identity Provisioning can sync IAS users/groups with their **Global User ID**.
 3. **MVP scope** of the Task Center SPI (`TaskProviderV2.json`): pull definitions/tasks, description, response, action.
 
-**Stack**: .NET 10 LTS Minimal API · Azure Container Apps · Azure SQL Basic · Key Vault + managed identity · Bicep + azd · GitHub Actions. Estimated run cost ≈ USD 15–20/month.
+**Stack**: .NET 10 LTS Minimal API · Azure Container Apps · SQLite on an Azure Files share · Key Vault + managed identity · Bicep + azd · GitHub Actions. Estimated run cost ≈ USD 10–15/month.
 
 ## Reading order
 
@@ -37,7 +37,7 @@ Spec pack for a low-cost Azure prototype that plugs a non-SAP task source into *
 
 ## Status
 
-Features **001-005 are implemented and covered by automated tests** (unit, contract against SAP's unmodified `TaskProviderV2.json`, integration on a real SQL Server container, and a real-browser smoke test of the admin UI). Feature **006** is operational work in Valterra's SAP landscape and has **not been run**: the spike templates, E2E checklist, budget alert and production-gap list are prepared (`docs/evidence/`, `docs/e2e-acceptance.md`, `docs/production-gaps.md`).
+Features **001-005 are implemented and covered by automated tests** (unit, contract against SAP's unmodified `TaskProviderV2.json`, integration on a real SQLite database file, and a real-browser smoke test of the admin UI). Feature **006** is operational work in Valterra's SAP landscape and has **not been run**: the spike templates, E2E checklist, budget alert and production-gap list are prepared (`docs/evidence/`, `docs/e2e-acceptance.md`, `docs/production-gaps.md`).
 
 ## Quick start
 
@@ -52,11 +52,10 @@ Then follow `docs/btp-setup-guide.md`.
 
 ## Run locally
 
-Prerequisites: .NET 10 SDK, Docker.
+Prerequisite: .NET 10 SDK (no database server or Docker needed; the database is the file `tcp.db`).
 
 ```bash
-docker compose up -d                       # SQL Server 2022 on localhost:1433
-dotnet run --project src/Tcp.Api           # Development env: auto-migrates, admin / dev-admin
+dotnet run --project src/Tcp.Api           # Development env: creates tcp.db, auto-migrates, admin / dev-admin
 curl http://localhost:5000/healthz         # {"status":"Healthy"}  (port is printed on startup)
 curl -u admin:dev-admin "http://localhost:5000/admin/api/requests?prefix=/task-provider"
 ```
@@ -65,7 +64,7 @@ Tests:
 
 ```bash
 dotnet test tests/Tcp.UnitTests
-dotnet test tests/Tcp.IntegrationTests     # starts its own SQL Server container (Testcontainers)
+dotnet test tests/Tcp.IntegrationTests     # uses temporary SQLite files
 dotnet test tests/Tcp.ContractTests
 ```
 
@@ -73,9 +72,9 @@ Local secrets: use `dotnet user-secrets` (project `Tcp.Api`) — never commit th
 
 ## Deploy
 
-Prerequisites: Azure CLI, `azd`, PowerShell 7 (`pwsh`), go-sqlcmd (`winget install sqlcmd`).
+Prerequisites: Azure CLI, `azd`, PowerShell 7 (`pwsh`).
 
-`azd up` runs `infra/hooks/preprovision.ps1` (resolves the deploying principal), provisions `infra/main.bicep`, runs `infra/hooks/postprovision.ps1` (SQL user for the managed identity, Key Vault secrets — idempotent, values never printed) and deploys the container.
+`azd up` runs `infra/hooks/preprovision.ps1` (resolves the deploying principal), provisions `infra/main.bicep` (storage account + file share for the SQLite database, Key Vault, registry, Container App), runs `infra/hooks/postprovision.ps1` (Key Vault secrets — idempotent, values never printed) and deploys the container. To use a resource group that already exists: `azd env set AZURE_RESOURCE_GROUP <name>` and `azd env set AZURE_USE_EXISTING_RESOURCE_GROUP true` (and set `AZURE_LOCATION` to its region).
 
 ### GitHub Actions (OIDC)
 

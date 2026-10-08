@@ -12,7 +12,7 @@ Status key: **Accepted** · Proposed · Superseded
 - **Decision**: One Container App, 0.25 vCPU / 0.5 GiB, min replicas 1 while the destination is enabled (0 otherwise), max 2.
 - **Alternatives**: App Service B1 (fixed ~USD 13, fine), Functions Flex (URN routing + cold starts awkward).
 
-## ADR-003 Database: Azure SQL Basic (5 DTU) — Accepted
+## ADR-003 Database: Azure SQL Basic (5 DTU) — Superseded by ADR-011
 - **Context**: Pull query is keyset paging on `(ModifiedAt, Urn)`; serverless SQL cannot auto-pause because of 30-s delta pulls, so the free offer (100k vCore-s/month) would be exhausted in days.
 - **Decision**: Azure SQL Database Basic, Entra-only auth with managed identity. `Urn` columns use a **binary collation** (`Latin1_General_100_BIN2`) to guarantee ordinal ordering matching "lexicographically greater".
 - **Consequences**: ~USD 5/month fixed; 2 GB is ample (≈ 1 M tasks).
@@ -42,3 +42,9 @@ Status key: **Accepted** · Proposed · Superseded
 
 ## ADR-010 Claim/Release as definition actions — Accepted
 - `TaskProviderV2.json` has no global-operations endpoint, so `claim` and `release` are defined as `possibleActions` per definition with `validActionCodes` computed per task (`processor == null` ⇒ `claim`, else `release`).
+
+## ADR-011 Database: SQLite file on an Azure Files share — Accepted (supersedes ADR-003)
+- **Context**: A prototype with one writer, a few thousand tasks and a 30-s pull needs no database server. Azure SQL added a server to provision, a firewall, an Entra admin, a post-provision SQL user step and a globally unique server name (which blocked the first deployment).
+- **Decision**: EF Core 10 with the SQLite provider. The database is one file (`/data/tcp.db`) on an Azure Files (SMB) share mounted into the container app. Journal mode `DELETE` (WAL needs shared memory and does not work on SMB). The container app is limited to **one replica** (`maxReplicas: 1`). Migrations run at startup as before.
+- **Mapping from SQL Server**: no schemas (table names are unique); `Urn` etc. use collation `BINARY` (byte order, same ordinal ordering as before); case-insensitive SCIM strings use `NOCASE`, which folds **ASCII only**; `ISJSON` checks became `json_valid`; `rowversion` became a random concurrency token stamped by `TcpDbContext.SaveChanges`; the clustered pull index became a plain unique index `(ModifiedAt, Urn)`; the local-id counter is one `UPDATE … RETURNING` statement.
+- **Consequences**: removes ~USD 5/month and the SQL provisioning steps; integration tests need no container. Risks accepted for a prototype: writers are serialised (SQLite locks the whole file); Azure Files adds latency per write; two overlapping revisions during a deployment briefly share the file; no point-in-time restore (enable share snapshots/backup if data matters); non-ASCII case-insensitive matching differs from SQL Server. Revisit (ADR-003 style) before production, see `docs/production-gaps.md`.

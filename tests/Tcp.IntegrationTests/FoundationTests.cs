@@ -33,8 +33,7 @@ public class FoundationTests(SqlServerFixture sql)
     [Fact] // T001-02
     public async Task Ready_returns_503_when_db_unreachable_but_liveness_stays_200()
     {
-        const string unreachable = "Server=127.0.0.1,1;Database=x;User Id=sa;Password=x;Connect Timeout=2;TrustServerCertificate=True";
-        await using var factory = new TcpFactory(unreachable, migrate: false);
+        await using var factory = new TcpFactory(TcpFactory.UnreachableDb, migrate: false);
         var client = factory.CreateClient();
 
         (await client.GetAsync("/healthz")).StatusCode.Should().Be(HttpStatusCode.OK);

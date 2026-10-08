@@ -28,4 +28,29 @@ public class TcpDbContext(DbContextOptions<TcpDbContext> options) : DbContext(op
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TcpDbContext).Assembly);
     }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        StampRowVersions();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        StampRowVersions();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    /// <summary>
+    /// SQLite has no <c>rowversion</c>. Every inserted or updated task gets a new random token; the old one stays in the
+    /// WHERE clause of the UPDATE (concurrency token), so a concurrent writer fails with DbUpdateConcurrencyException.
+    /// </summary>
+    private void StampRowVersions()
+    {
+        foreach (var entry in ChangeTracker.Entries<TaskInstance>())
+        {
+            if (entry.State is EntityState.Added or EntityState.Modified)
+                entry.Entity.RowVersion = Guid.NewGuid().ToByteArray();
+        }
+    }
 }

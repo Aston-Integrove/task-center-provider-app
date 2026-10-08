@@ -36,8 +36,10 @@ builder.Services.Configure<DatabaseOptions>(config.GetSection(DatabaseOptions.Se
 builder.Services.Configure<KeyVaultOptions>(config.GetSection(KeyVaultOptions.Section));
 builder.Services.Configure<AdminOptions>(config.GetSection(AdminOptions.Section));
 
-builder.Services.AddDbContext<TcpDbContext>(o =>
-    o.UseSqlServer(config.GetConnectionString("Sql") ?? throw new InvalidOperationException("ConnectionStrings:Sql is not configured")));
+var dbConnectionString = config.GetConnectionString("Database")
+    ?? throw new InvalidOperationException("ConnectionStrings:Database is not configured");
+SqliteStore.EnsureDirectory(dbConnectionString);
+builder.Services.AddDbContext<TcpDbContext>(o => o.UseSqlite(dbConnectionString));
 
 builder.Services.AddSingleton<IRequestLog>(sp =>
     new RequestLogBuffer(sp.GetRequiredService<IOptions<DiagnosticsOptions>>().Value.RequestLogSize));
@@ -61,6 +63,9 @@ if (config.GetSection(DatabaseOptions.Section).Get<DatabaseOptions>()?.MigrateOn
     // A failed migration throws and stops the host: the container never serves traffic on a stale schema.
     await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<TcpDbContext>();
+    var journalMode = config.GetSection(DatabaseOptions.Section).Get<DatabaseOptions>()?.JournalMode;
+    if (!string.IsNullOrWhiteSpace(journalMode))
+        await SqliteStore.SetJournalModeAsync(db, journalMode);
     var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
     app.Logger.LogInformation("Applying {Count} pending migration(s): {Migrations}", pending.Count, string.Join(", ", pending));
     await db.Database.MigrateAsync();

@@ -13,7 +13,7 @@ public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Total);
 internal static class ScimDb
 {
     public static bool IsUniqueViolation(DbUpdateException ex) =>
-        ex.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 };
+        ex.InnerException is Microsoft.Data.Sqlite.SqliteException { SqliteExtendedErrorCode: 2067 or 1555 }; // UNIQUE / PRIMARYKEY
 
     public static DateTime TruncateToMs(DateTime utc) => new(utc.Ticks - utc.Ticks % TimeSpan.TicksPerMillisecond, DateTimeKind.Utc);
 

@@ -22,12 +22,12 @@ public class ScimSchemaTests(SqlServerFixture sql)
     };
 
     [Fact] // T003-01
-    public async Task Tables_live_in_the_idm_schema()
+    public async Task Scim_tables_exist()
     {
         _ = Host.Factory.CreateClient(); // start host => migrations
         await using var db = NewContext();
         var tables = await db.Database.SqlQueryRaw<string>(
-            "SELECT TABLE_NAME AS Value FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'idm'").ToListAsync();
+            "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name LIKE 'Scim%'").ToListAsync();
 
         tables.Should().BeEquivalentTo("ScimUser", "ScimGroup", "ScimGroupMember", "ScimAudit");
     }

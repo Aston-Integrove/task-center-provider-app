@@ -1,6 +1,6 @@
 # Constitution — SAP Task Center Third-Party Provider Prototype
 
-Version 1.0 · Ratified 2026-10-07 · Owner: Aston Motsau (Integrove)
+Version 1.1 · Ratified 2026-10-07 · Amended 2026-10-08 · Owner: Aston Motsau (Integrove)
 
 This constitution governs every spec, plan, task and line of code in this repository. When a spec, plan or AI-generated change conflicts with it, the constitution wins. Amendments require a version bump and a note in the change log at the bottom.
 
@@ -25,7 +25,7 @@ Prove, at minimal cost and complexity, that a non-SAP system hosted on Azure can
 - Specs describe behaviour in testable acceptance criteria (Given/When/Then). Ambiguities are marked `[NEEDS CLARIFICATION]` and resolved before planning.
 
 ### III. Test first
-- Write the failing test, then the code. Minimum: unit tests for domain rules, integration tests against a real SQL Server container (Testcontainers), contract tests against OpenAPI.
+- Write the failing test, then the code. Minimum: unit tests for domain rules, integration tests against a real SQLite database file (no mocks of the data layer), contract tests against OpenAPI.
 - The SPI pull algorithm (keyset paging on `modifiedAt`, `urn`) MUST have property-style tests covering identical timestamps across page boundaries.
 
 ### IV. Global User ID is the only user key
@@ -34,13 +34,13 @@ Prove, at minimal cost and complexity, that a non-SAP system hosted on Azure can
 - The provider's user store is populated **only** through SCIM (or the admin seed path in non-production). No hand-typed user IDs in task data.
 
 ### V. Simplicity and minimal cost
-- One deployable (.NET 10 LTS Minimal API container), one database (Azure SQL Basic), one environment per stage. No message brokers, no caches, no microservices.
+- One deployable (.NET 10 LTS Minimal API container), one database (a SQLite file on an Azure Files share, single writer), one environment per stage. No message brokers, no caches, no microservices.
 - Target run cost ≤ USD 25/month per environment. Any resource adding > USD 5/month needs an ADR.
 - YAGNI: features outside the MVP scope (attachments, comments, substitution, push, bulk) are explicitly out of scope until a new spec is approved.
 
 ### VI. Secure by default
 - All endpoints require authentication except `/healthz`, `/.well-known/*`, and `/oauth/token` (which authenticates clients itself).
-- Secrets and signing keys live in Azure Key Vault; the app uses a system-assigned managed identity for Key Vault and Azure SQL (Entra auth). No secrets in source, config files or pipeline logs.
+- Secrets and signing keys live in Azure Key Vault; the app uses a system-assigned managed identity for Key Vault; the database is a local file and has no credentials. No secrets in source, config files or pipeline logs.
 - Tokens: short-lived (≤ 15 min tech, ≤ 10 min user), RS256-signed, audience-restricted per client.
 - Logs never contain tokens, assertions, secrets, or full personal data; user IDs may be logged.
 
@@ -59,7 +59,7 @@ Prove, at minimal cost and complexity, that a non-SAP system hosted on Azure can
 | Area | Decision |
 |---|---|
 | Runtime | .NET 10 LTS, ASP.NET Core Minimal APIs, C# 14 |
-| Data | Azure SQL Database Basic (5 DTU), EF Core 10 or Dapper (plan decides), migrations in repo |
+| Data | SQLite file on an Azure Files share (max 1 replica), EF Core 10, migrations in repo |
 | Hosting | Azure Container Apps (Consumption), min replicas 1 during integration testing |
 | Registry | Azure Container Registry Basic |
 | Secrets | Azure Key Vault + system-assigned managed identity |
@@ -82,3 +82,4 @@ Prove, at minimal cost and complexity, that a non-SAP system hosted on Azure can
 
 ## Change log
 - 1.0 (2026-10-07) — initial version.
+- 1.1 (2026-10-08) — database changed from Azure SQL Basic to SQLite on an Azure Files share (ADR-011); principles III, V, VI and the Data row updated.

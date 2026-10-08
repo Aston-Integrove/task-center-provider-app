@@ -188,15 +188,15 @@ public class SpiPullTests(SqlServerFixture sql)
         small.Count.Should().Be(large.Count, "child rows are loaded with set-based queries, not per task");
         small.Count.Should().BeLessThanOrEqualTo(8);
 
-        var main = small.Single(m => m.Contains("FROM [tc].[TaskInstance]") && m.Contains("ORDER BY"));
-        main.Should().Contain("TOP(");
-        main.Should().Contain("ORDER BY [t].[ModifiedAt], [t].[Urn]");
-        main.Should().MatchRegex(@"\[t\]\.\[ModifiedAt\] > @");
-        main.Should().MatchRegex(@"\[t\]\.\[ModifiedAt\] = @.*\[t\]\.\[Urn\] > @");
-        small.Count(m => m.Contains("FROM [tc].[TaskRecipientUser]")).Should().Be(1);
-        small.Count(m => m.Contains("FROM [tc].[TaskRecipientGroup]")).Should().Be(1);
-        small.Count(m => m.Contains("FROM [tc].[TaskCustomAttribute]")).Should().Be(1);
-        small.Count(m => m.Contains("FROM [tc].[TaskOperationError]")).Should().Be(1);
+        var main = small.Single(m => m.Contains("FROM \"TaskInstance\"") && m.Contains("ORDER BY"));
+        main.Should().Contain("LIMIT");
+        main.Should().Contain("ORDER BY \"t\".\"ModifiedAt\", \"t\".\"Urn\"");
+        main.Should().MatchRegex("\"t\"\\.\"ModifiedAt\" > @");
+        main.Should().MatchRegex("\"t\"\\.\"ModifiedAt\" = @.*\"t\"\\.\"Urn\" > @");
+        small.Count(m => m.Contains("FROM \"TaskRecipientUser\"")).Should().Be(1);
+        small.Count(m => m.Contains("FROM \"TaskRecipientGroup\"")).Should().Be(1);
+        small.Count(m => m.Contains("FROM \"TaskCustomAttribute\"")).Should().Be(1);
+        small.Count(m => m.Contains("FROM \"TaskOperationError\"")).Should().Be(1);
     }
 
     [Fact] // user tokens may pull too (E4 is "tech or user")

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\Tcp.Domain\Tcp.Domain.csproj" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*" PrivateAssets="all" />
     <PackageReference Include="HtmlSanitizer" Version="9.*" />
   </ItemGroup>

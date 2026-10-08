@@ -398,17 +398,17 @@ public class DefinitionSeederTests(SqlServerFixture sql)
     }
 
     [Fact] // T004-02: indexes and constraints
-    public async Task Pull_index_is_clustered_and_urn_is_the_nonclustered_primary_key()
+    public async Task Pull_index_is_unique_and_urn_is_the_primary_key()
     {
         var host = SpiHost.Isolated(sql);
         _ = host.Factory.Server;
 
+        // name:unique:origin, origin 'c' = CREATE INDEX, 'pk' = PRIMARY KEY constraint
         var indexes = await host.DbAsync(db => db.Database.SqlQueryRaw<string>(
-            "SELECT CAST(i.name + ':' + i.type_desc + ':' + CAST(i.is_unique AS varchar(1)) AS nvarchar(200)) COLLATE DATABASE_DEFAULT AS Value FROM sys.indexes i " +
-            "WHERE i.object_id = OBJECT_ID('tc.TaskInstance') AND i.name IS NOT NULL").ToListAsync());
+            "SELECT name || ':' || \"unique\" || ':' || origin AS Value FROM pragma_index_list('TaskInstance')").ToListAsync());
 
-        indexes.Should().Contain("IX_TaskInstance_Pull:CLUSTERED:1");
-        indexes.Should().Contain(i => i.StartsWith("PK_TaskInstance:NONCLUSTERED"));
+        indexes.Should().Contain("IX_TaskInstance_Pull:1:c");
+        indexes.Should().Contain(i => i.EndsWith(":1:pk"));
         indexes.Should().Contain(i => i.StartsWith("IX_TaskInstance_Processor"));
 
         var act = () => host.AddTaskAsync(new TaskSpec { Status = "NOT_A_STATUS" });

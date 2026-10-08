@@ -1,22 +1,34 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.MsSql;
 using Xunit;
 
 namespace Tcp.TestSupport;
 
-/// <summary>One SQL Server 2022 container shared by all tests in a collection.</summary>
+/// <summary>
+/// A temporary folder holding one SQLite file per test database. Kept under its historical name so the many test
+/// classes that take it as a constructor argument stay unchanged; no container is needed any more.
+/// </summary>
 public sealed class SqlServerFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), "tcp-tests-" + Guid.NewGuid().ToString("N"));
 
+    /// <summary>Connection string for a database file named after <paramref name="database"/> (created on first use).</summary>
     public string ConnectionString(string database) =>
-        new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(_container.GetConnectionString())
-        { InitialCatalog = database }.ConnectionString;
+        $"Data Source={Path.Combine(_directory, database + ".db")}";
 
-    public Task InitializeAsync() => _container.StartAsync();
-    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
+    public Task InitializeAsync()
+    {
+        Directory.CreateDirectory(_directory);
+        return Task.CompletedTask;
+    }
+
+    public Task DisposeAsync()
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        try { Directory.Delete(_directory, recursive: true); } catch (IOException) { /* best effort */ }
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -37,12 +49,14 @@ public sealed class TcpFactory(
     public const string PpSecret = "pp-secret";
     public const string ScimSecret = "scim-secret";
     public const string PublicBaseUrl = "https://tc.test";
-    public const string UnreachableSql = "Server=127.0.0.1,1;Database=x;User Id=sa;Password=x;Connect Timeout=2;TrustServerCertificate=True";
+
+    /// <summary>A database file in a folder that does not exist and is never created (ReadOnly mode never creates it).</summary>
+    public static readonly string UnreachableDb = "Data Source=" + Path.Combine(Path.GetTempPath(), "tcp-does-not-exist", "x.db") + ";Mode=ReadOnly";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.UseSetting("ConnectionStrings:Sql", connectionString ?? UnreachableSql);
+        builder.UseSetting("ConnectionStrings:Database", connectionString ?? UnreachableDb);
         builder.UseSetting("Database:MigrateOnStartup", (migrate ?? connectionString is not null) ? "true" : "false");
         builder.UseSetting("Admin:BasicUser", AdminUser);
         builder.UseSetting("Admin:Password", AdminPassword);

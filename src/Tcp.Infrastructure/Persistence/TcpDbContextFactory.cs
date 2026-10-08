@@ -8,10 +8,10 @@ public sealed class TcpDbContextFactory : IDesignTimeDbContextFactory<TcpDbConte
 {
     public TcpDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Sql")
-            ?? @"Server=(localdb)\MSSQLLocalDB;Database=tcp_design;Trusted_Connection=True;TrustServerCertificate=True";
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Database")
+            ?? "Data Source=tcp_design.db";
         var options = new DbContextOptionsBuilder<TcpDbContext>()
-            .UseSqlServer(connectionString)
+            .UseSqlite(connectionString)
             .Options;
         return new TcpDbContext(options);
     }

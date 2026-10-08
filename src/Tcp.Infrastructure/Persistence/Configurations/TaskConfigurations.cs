@@ -35,11 +35,11 @@ internal sealed class TaskDefinitionConfiguration : IEntityTypeConfiguration<Tas
 {
     public void Configure(EntityTypeBuilder<TaskDefinitionEntity> b)
     {
-        b.ToTable("TaskDefinition", "tc", t =>
+        b.ToTable("TaskDefinition", t =>
         {
             t.HasCheckConstraint("CK_TaskDefinition_Json",
-                "ISJSON([NameJson]) = 1 AND ISJSON([ResponsesJson]) = 1 AND ISJSON([ActionsJson]) = 1 " +
-                "AND ISJSON([CustomAttributesJson]) = 1 AND ISJSON([CapabilitiesJson]) = 1");
+                "json_valid(\"NameJson\") AND json_valid(\"ResponsesJson\") AND json_valid(\"ActionsJson\") " +
+                "AND json_valid(\"CustomAttributesJson\") AND json_valid(\"CapabilitiesJson\")");
         });
         b.HasKey(d => d.Urn);
         b.Property(d => d.Urn).Urn();
@@ -49,7 +49,6 @@ internal sealed class TaskDefinitionConfiguration : IEntityTypeConfiguration<Tas
         b.Property(d => d.ActionsJson).IsRequired();
         b.Property(d => d.CustomAttributesJson).IsRequired();
         b.Property(d => d.CapabilitiesJson).IsRequired();
-        b.Property(d => d.ModifiedAt).HasColumnType("datetime2(3)");
         b.HasIndex(d => d.LocalId).IsUnique();
     }
 }
@@ -61,34 +60,30 @@ internal sealed class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskI
         var statuses = string.Join(",", TaskStatuses.All.Select(s => $"'{s}'"));
         var priorities = string.Join(",", TaskPriorities.All.Select(p => $"'{p}'"));
 
-        b.ToTable("TaskInstance", "tc", t =>
+        b.ToTable("TaskInstance", t =>
         {
-            t.HasCheckConstraint("CK_TaskInstance_Status", $"[Status] IN ({statuses})");
-            t.HasCheckConstraint("CK_TaskInstance_Priority", $"[Priority] IN ({priorities})");
-            t.HasCheckConstraint("CK_TaskInstance_Json", "ISJSON([SubjectJson]) = 1 AND ([DescriptionJson] IS NULL OR ISJSON([DescriptionJson]) = 1)");
+            t.HasCheckConstraint("CK_TaskInstance_Status", $"\"Status\" IN ({statuses})");
+            t.HasCheckConstraint("CK_TaskInstance_Priority", $"\"Priority\" IN ({priorities})");
+            t.HasCheckConstraint("CK_TaskInstance_Json", "json_valid(\"SubjectJson\") AND (\"DescriptionJson\" IS NULL OR json_valid(\"DescriptionJson\"))");
         });
 
-        // The primary key is nonclustered; the clustered index is the pull order so /tasks is a pure range scan.
-        b.HasKey(t => t.Urn).IsClustered(false);
+        b.HasKey(t => t.Urn);
         b.Property(t => t.Urn).Urn();
         b.Property(t => t.LocalId).LocalId().IsRequired();
         b.Property(t => t.DefinitionUrn).Urn();
         b.Property(t => t.Status).HasMaxLength(16).IsUnicode(false).IsRequired();
         b.Property(t => t.Priority).HasMaxLength(16).IsUnicode(false).IsRequired().HasDefaultValue(TaskPriorities.Medium);
         b.Property(t => t.SubjectJson).IsRequired();
-        b.Property(t => t.CreatedAt).HasColumnType("datetime2(3)");
-        b.Property(t => t.ModifiedAt).HasColumnType("datetime2(3)");
-        b.Property(t => t.DueAt).HasColumnType("datetime2(3)");
-        b.Property(t => t.CompletedAt).HasColumnType("datetime2(3)");
         b.Property(t => t.CreatedBy).UserId();
         b.Property(t => t.ModifiedBy).UserId();
         b.Property(t => t.Processor).UserId();
         b.Property(t => t.CompletedBy).UserId();
-        b.Property(t => t.RowVersion).IsRowVersion();
+        // SQLite has no rowversion: TcpDbContext assigns a fresh value on every insert/update (optimistic concurrency).
+        b.Property(t => t.RowVersion).IsConcurrencyToken().IsRequired();
 
-        b.HasIndex(t => new { t.ModifiedAt, t.Urn }).IsUnique().IsClustered().HasDatabaseName("IX_TaskInstance_Pull");
+        b.HasIndex(t => new { t.ModifiedAt, t.Urn }).IsUnique().HasDatabaseName("IX_TaskInstance_Pull");
         b.HasIndex(t => t.LocalId).IsUnique();
-        b.HasIndex(t => t.Processor).HasFilter("[Processor] IS NOT NULL").HasDatabaseName("IX_TaskInstance_Processor");
+        b.HasIndex(t => t.Processor).HasFilter("\"Processor\" IS NOT NULL").HasDatabaseName("IX_TaskInstance_Processor");
         b.HasIndex(t => t.DefinitionUrn);
 
         b.HasOne<TaskDefinitionEntity>().WithMany().HasForeignKey(t => t.DefinitionUrn).OnDelete(DeleteBehavior.Restrict);
@@ -99,7 +94,7 @@ internal sealed class TaskRecipientUserConfiguration : IEntityTypeConfiguration<
 {
     public void Configure(EntityTypeBuilder<TaskRecipientUser> b)
     {
-        b.ToTable("TaskRecipientUser", "tc");
+        b.ToTable("TaskRecipientUser");
         b.HasKey(r => new { r.TaskUrn, r.GlobalUserId });
         b.Property(r => r.TaskUrn).Urn();
         b.Property(r => r.GlobalUserId).UserId();
@@ -112,7 +107,7 @@ internal sealed class TaskRecipientGroupConfiguration : IEntityTypeConfiguration
 {
     public void Configure(EntityTypeBuilder<TaskRecipientGroup> b)
     {
-        b.ToTable("TaskRecipientGroup", "tc");
+        b.ToTable("TaskRecipientGroup");
         b.HasKey(r => new { r.TaskUrn, r.GroupName });
         b.Property(r => r.TaskUrn).Urn();
         b.Property(r => r.GroupName).HasMaxLength(256).UseCollation(Collations.CaseInsensitive);
@@ -125,7 +120,7 @@ internal sealed class TaskCustomAttributeConfiguration : IEntityTypeConfiguratio
 {
     public void Configure(EntityTypeBuilder<TaskCustomAttribute> b)
     {
-        b.ToTable("TaskCustomAttribute", "tc");
+        b.ToTable("TaskCustomAttribute");
         b.HasKey(a => new { a.TaskUrn, a.Code });
         b.Property(a => a.TaskUrn).Urn();
         b.Property(a => a.Code).HasMaxLength(64).IsUnicode(false);
@@ -138,10 +133,9 @@ internal sealed class TaskOperationErrorConfiguration : IEntityTypeConfiguration
 {
     public void Configure(EntityTypeBuilder<TaskOperationError> b)
     {
-        b.ToTable("TaskOperationError", "tc");
+        b.ToTable("TaskOperationError");
         b.HasKey(e => e.Id);
         b.Property(e => e.TaskUrn).Urn();
-        b.Property(e => e.ExecutedAt).HasColumnType("datetime2(3)");
         b.Property(e => e.Code).HasMaxLength(64).IsUnicode(false).IsRequired();
         b.Property(e => e.Message).HasMaxLength(2000).IsRequired();
         b.Property(e => e.ExecutedBy).UserId();
@@ -154,7 +148,7 @@ internal sealed class OperationLogConfiguration : IEntityTypeConfiguration<Opera
 {
     public void Configure(EntityTypeBuilder<OperationLogEntry> b)
     {
-        b.ToTable("OperationLog", "tc");
+        b.ToTable("OperationLog");
         b.HasKey(e => e.Id);
         b.Property(e => e.TaskUrn).Urn();
         b.Property(e => e.Kind).HasMaxLength(16).IsUnicode(false).IsRequired();
@@ -162,7 +156,6 @@ internal sealed class OperationLogConfiguration : IEntityTypeConfiguration<Opera
         b.Property(e => e.Comment).HasMaxLength(2000);
         b.Property(e => e.ReasonCode).HasMaxLength(64);
         b.Property(e => e.UserId).UserId();
-        b.Property(e => e.At).HasColumnType("datetime2(3)");
         b.Property(e => e.Outcome).HasMaxLength(16).IsUnicode(false).IsRequired();
         b.Property(e => e.ErrorCode).HasMaxLength(64).IsUnicode(false);
         b.HasIndex(e => e.TaskUrn);
@@ -174,9 +167,8 @@ internal sealed class LocalIdSequenceConfiguration : IEntityTypeConfiguration<Lo
 {
     public void Configure(EntityTypeBuilder<LocalIdSequence> b)
     {
-        b.ToTable("LocalIdSequence", "tc");
+        b.ToTable("LocalIdSequence");
         b.HasKey(s => new { s.DefinitionLocalId, s.Day });
         b.Property(s => s.DefinitionLocalId).HasMaxLength(64).IsUnicode(false);
-        b.Property(s => s.Day).HasColumnType("date");
     }
 }

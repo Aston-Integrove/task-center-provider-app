@@ -17,10 +17,16 @@ az login
 azd auth login
 azd env new dev --location southafricanorth      # the name "dev" is AZURE_ENV_NAME below
 azd env set AZURE_BUDGET_EMAIL you@example.com   # optional USD 25 budget alert
-azd up                                           # ~10-15 min; creates rg-dev, SQL, Key Vault, ACR, Container App
+azd up                                           # ~10 min; creates rg-dev (or uses an existing group), storage + file share
+                                                 # for the SQLite database, Key Vault, ACR, Container App
 ```
 
-Prerequisites on your machine: Azure CLI, `azd`, PowerShell 7 (`pwsh`), go-sqlcmd (`winget install sqlcmd`).
+Using a resource group that already exists (for example one an admin created): before `azd up` run
+`azd env set AZURE_LOCATION <its region>`, `azd env set AZURE_RESOURCE_GROUP <name>` and
+`azd env set AZURE_USE_EXISTING_RESOURCE_GROUP true`. The pipeline identity then needs Contributor on that group, and
+`AZURE_RESOURCE_GROUP` / `AZURE_LOCATION` must be set as GitHub variables too.
+
+Prerequisites on your machine: Azure CLI, `azd`, PowerShell 7 (`pwsh`).
 Check: `azd env get-values | Select-String "APP_FQDN"` then open `https://<fqdn>/healthz`.
 
 ## 2. Create the identity the pipeline signs in as
@@ -99,5 +105,5 @@ Success looks like: login, *Load provisioned resources*, *Deploy*, then *Post-de
 | `AADSTS700213 / AADSTS70021: No matching federated identity record found` | Subject mismatch. It must be exactly `repo:Aston-Integrove/task-center-provider-app:environment:dev` (case-sensitive); re-check step 3 and that the job really uses `environment: dev`. |
 | `AuthorizationFailed ... does not have authorization to perform action` | Role missing or wrong scope (step 4); the group is `rg-<AZURE_ENV_NAME>`. |
 | `azd deploy`: `no azure resource group` / service not found | Infrastructure was never provisioned in this subscription/environment name (step 1), or `AZURE_ENV_NAME`/`AZURE_LOCATION` differ from what `azd up` used. |
-| Health check fails after deploy | Open the Container App log stream; common causes: SQL user for the managed identity missing (the `postprovision` hook did not run), Key Vault secrets absent. Re-run `azd provision` locally. |
+| Health check fails after deploy | Open the Container App log stream; common causes: the `/data` file share is not mounted or not writable (look for "unable to open database file"), Key Vault secrets absent (the `postprovision` hook did not run). Re-run `azd provision` locally. |
 | `The subscription is not registered to use namespace Microsoft.App` | One-time: `az provider register -n Microsoft.App -n Microsoft.ContainerRegistry -n Microsoft.OperationalInsights -n Microsoft.Sql --wait` |

@@ -6,8 +6,7 @@ param registryLoginServer string
 param pullIdentityId string
 param keyVaultName string
 param keyVaultUri string
-param sqlFqdn string
-param sqlDatabaseName string
+param storageMountName string
 param publicBaseUrl string
 
 @description('Bootstrap image; `azd deploy` replaces it with the built image.')
@@ -54,18 +53,30 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'KeyVault__Uri', value: keyVaultUri }
             { name: 'Provider__PublicBaseUrl', value: publicBaseUrl }
             { name: 'OAuth__Issuer', value: publicBaseUrl }
-            {
-              name: 'ConnectionStrings__Sql'
-              value: 'Server=tcp:${sqlFqdn},1433;Database=${sqlDatabaseName};Authentication=Active Directory Managed Identity;Encrypt=True;TrustServerCertificate=False;Connect Timeout=30'
-            }
+            { name: 'ConnectionStrings__Database', value: 'Data Source=/data/tcp.db' }
+            // WAL needs shared memory, which a network file system (Azure Files / SMB) cannot provide.
+            { name: 'Database__JournalMode', value: 'DELETE' }
           ], extraEnv)
+          volumeMounts: [
+            { volumeName: 'data', mountPath: '/data' }
+          ]
           probes: [
             { type: 'Liveness', httpGet: { path: '/healthz', port: targetPort }, periodSeconds: 30 }
             { type: 'Readiness', httpGet: { path: '/healthz/ready', port: targetPort }, periodSeconds: 15, failureThreshold: 6 }
           ]
         }
       ]
-      scale: { minReplicas: minReplicas, maxReplicas: 2 }
+      volumes: [
+        {
+          name: 'data'
+          storageType: 'AzureFile'
+          storageName: storageMountName
+          // uid/gid 1654 = the non-root "app" user in the image. Byte-range locks stay ON so SQLite can lock the file.
+          mountOptions: 'dir_mode=0770,file_mode=0660,uid=1654,gid=1654,mfsymlinks'
+        }
+      ]
+      // SQLite allows one writer process: never more than one replica.
+      scale: { minReplicas: minReplicas, maxReplicas: 1 }
     }
   }
 }

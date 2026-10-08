@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Tcp.Infrastructure.Persistence;
@@ -12,177 +11,171 @@ using Tcp.Infrastructure.Persistence;
 namespace Tcp.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(TcpDbContext))]
-    [Migration("20261007163542_TaskSchema")]
-    partial class TaskSchema
+    [Migration("20261008103751_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
-
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
             modelBuilder.Entity("Tcp.Domain.Identity.ScimAuditEntry", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("At")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Operation")
                         .IsRequired()
                         .HasMaxLength(16)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(16)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("ResourceId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
                         .HasMaxLength(16)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(16)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Summary")
                         .IsRequired()
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("At");
 
-                    b.ToTable("ScimAudit", "idm");
+                    b.ToTable("ScimAudit", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Identity.ScimGroup", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)")
-                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DisplayName")
                         .IsUnique();
 
-                    b.ToTable("ScimGroup", "idm");
+                    b.ToTable("ScimGroup", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Identity.ScimGroupMember", b =>
                 {
                     b.Property<Guid>("GroupId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("GroupId", "UserId");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ScimGroupMember", "idm");
+                    b.ToTable("ScimGroupMember", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Identity.ScimUser", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("Active")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
+                        .HasColumnType("INTEGER")
                         .HasDefaultValue(true);
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("DisplayName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)")
-                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<string>("EmailsJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("EmailsSearch")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)")
-                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("FamilyName")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)")
-                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<string>("GivenName")
                         .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)")
-                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<string>("GlobalUserId")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PrimaryEmail")
                         .HasMaxLength(320)
-                        .HasColumnType("nvarchar(320)")
-                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<string>("RawJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)")
-                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.HasKey("Id");
 
@@ -190,18 +183,18 @@ namespace Tcp.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("GlobalUserId")
                         .IsUnique()
-                        .HasFilter("[GlobalUserId] IS NOT NULL");
+                        .HasFilter("\"GlobalUserId\" IS NOT NULL");
 
                     b.HasIndex("PrimaryEmail");
 
                     b.HasIndex("UserName")
                         .IsUnique();
 
-                    b.ToTable("ScimUser", "idm", t =>
+                    b.ToTable("ScimUser", null, t =>
                         {
-                            t.HasCheckConstraint("CK_ScimUser_EmailsJson", "ISJSON([EmailsJson]) = 1");
+                            t.HasCheckConstraint("CK_ScimUser_EmailsJson", "json_valid(\"EmailsJson\")");
 
-                            t.HasCheckConstraint("CK_ScimUser_RawJson", "ISJSON([RawJson]) = 1");
+                            t.HasCheckConstraint("CK_ScimUser_RawJson", "json_valid(\"RawJson\")");
                         });
                 });
 
@@ -210,73 +203,71 @@ namespace Tcp.Infrastructure.Persistence.Migrations
                     b.Property<string>("DefinitionLocalId")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Day")
-                        .HasColumnType("date");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Next")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("DefinitionLocalId", "Day");
 
-                    b.ToTable("LocalIdSequence", "tc");
+                    b.ToTable("LocalIdSequence", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Tasks.OperationLogEntry", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("At")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Comment")
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ErrorCode")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(16)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(16)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Outcome")
                         .IsRequired()
                         .HasMaxLength(16)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(16)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ReasonCode")
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("TaskUrn")
                         .IsRequired()
                         .HasMaxLength(300)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(300)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.HasKey("Id");
 
@@ -284,7 +275,7 @@ namespace Tcp.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("OperationLog", "tc");
+                    b.ToTable("OperationLog", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Tasks.TaskCustomAttribute", b =>
@@ -292,22 +283,22 @@ namespace Tcp.Infrastructure.Persistence.Migrations
                     b.Property<string>("TaskUrn")
                         .HasMaxLength(300)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(300)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("Code")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("TaskUrn", "Code");
 
-                    b.ToTable("TaskCustomAttribute", "tc");
+                    b.ToTable("TaskCustomAttribute", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Tasks.TaskDefinitionEntity", b =>
@@ -315,50 +306,50 @@ namespace Tcp.Infrastructure.Persistence.Migrations
                     b.Property<string>("Urn")
                         .HasMaxLength(300)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(300)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("ActionsJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CapabilitiesJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CustomAttributesJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("LocalId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<DateTime>("ModifiedAt")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("NameJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ResponsesJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("TaskDetailsSettingsJson")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Urn");
 
                     b.HasIndex("LocalId")
                         .IsUnique();
 
-                    b.ToTable("TaskDefinition", "tc", t =>
+                    b.ToTable("TaskDefinition", null, t =>
                         {
-                            t.HasCheckConstraint("CK_TaskDefinition_Json", "ISJSON([NameJson]) = 1 AND ISJSON([ResponsesJson]) = 1 AND ISJSON([ActionsJson]) = 1 AND ISJSON([CustomAttributesJson]) = 1 AND ISJSON([CapabilitiesJson]) = 1");
+                            t.HasCheckConstraint("CK_TaskDefinition_Json", "json_valid(\"NameJson\") AND json_valid(\"ResponsesJson\") AND json_valid(\"ActionsJson\") AND json_valid(\"CustomAttributesJson\") AND json_valid(\"CapabilitiesJson\")");
                         });
                 });
 
@@ -367,89 +358,86 @@ namespace Tcp.Infrastructure.Persistence.Migrations
                     b.Property<string>("Urn")
                         .HasMaxLength(300)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(300)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CompletedBy")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("DefinitionUrn")
                         .IsRequired()
                         .HasMaxLength(300)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(300)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("DescriptionJson")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("DueAt")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("LocalId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<DateTime>("ModifiedAt")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ModifiedBy")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("Priority")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(16)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(16)")
+                        .HasColumnType("TEXT")
                         .HasDefaultValue("MEDIUM");
 
                     b.Property<string>("Processor")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("BLOB");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(16)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SubjectJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Urn");
-
-                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Urn"), false);
 
                     b.HasIndex("DefinitionUrn");
 
@@ -458,21 +446,19 @@ namespace Tcp.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Processor")
                         .HasDatabaseName("IX_TaskInstance_Processor")
-                        .HasFilter("[Processor] IS NOT NULL");
+                        .HasFilter("\"Processor\" IS NOT NULL");
 
                     b.HasIndex("ModifiedAt", "Urn")
                         .IsUnique()
                         .HasDatabaseName("IX_TaskInstance_Pull");
 
-                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("ModifiedAt", "Urn"));
-
-                    b.ToTable("TaskInstance", "tc", t =>
+                    b.ToTable("TaskInstance", null, t =>
                         {
-                            t.HasCheckConstraint("CK_TaskInstance_Json", "ISJSON([SubjectJson]) = 1 AND ([DescriptionJson] IS NULL OR ISJSON([DescriptionJson]) = 1)");
+                            t.HasCheckConstraint("CK_TaskInstance_Json", "json_valid(\"SubjectJson\") AND (\"DescriptionJson\" IS NULL OR json_valid(\"DescriptionJson\"))");
 
-                            t.HasCheckConstraint("CK_TaskInstance_Priority", "[Priority] IN ('VERY_HIGH','HIGH','MEDIUM','LOW')");
+                            t.HasCheckConstraint("CK_TaskInstance_Priority", "\"Priority\" IN ('VERY_HIGH','HIGH','MEDIUM','LOW')");
 
-                            t.HasCheckConstraint("CK_TaskInstance_Status", "[Status] IN ('READY','RESERVED','IN_PROGRESS','FOR_RESUBMISSION','INACTIVE','COMPLETED','CANCELED')");
+                            t.HasCheckConstraint("CK_TaskInstance_Status", "\"Status\" IN ('READY','RESERVED','IN_PROGRESS','FOR_RESUBMISSION','INACTIVE','COMPLETED','CANCELED')");
                         });
                 });
 
@@ -480,43 +466,41 @@ namespace Tcp.Infrastructure.Persistence.Migrations
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("ExecutedAt")
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ExecutedBy")
                         .IsRequired()
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("TaskUrn")
                         .IsRequired()
                         .HasMaxLength(300)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(300)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TaskUrn");
 
-                    b.ToTable("TaskOperationError", "tc");
+                    b.ToTable("TaskOperationError", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Tasks.TaskRecipientGroup", b =>
@@ -524,19 +508,19 @@ namespace Tcp.Infrastructure.Persistence.Migrations
                     b.Property<string>("TaskUrn")
                         .HasMaxLength(300)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(300)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("GroupName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)")
-                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.HasKey("TaskUrn", "GroupName");
 
                     b.HasIndex("GroupName");
 
-                    b.ToTable("TaskRecipientGroup", "tc");
+                    b.ToTable("TaskRecipientGroup", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Tasks.TaskRecipientUser", b =>
@@ -544,20 +528,20 @@ namespace Tcp.Infrastructure.Persistence.Migrations
                     b.Property<string>("TaskUrn")
                         .HasMaxLength(300)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(300)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.Property<string>("GlobalUserId")
                         .HasMaxLength(64)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(64)")
-                        .UseCollation("Latin1_General_100_BIN2");
+                        .HasColumnType("TEXT")
+                        .UseCollation("BINARY");
 
                     b.HasKey("TaskUrn", "GlobalUserId");
 
                     b.HasIndex("GlobalUserId");
 
-                    b.ToTable("TaskRecipientUser", "tc");
+                    b.ToTable("TaskRecipientUser", (string)null);
                 });
 
             modelBuilder.Entity("Tcp.Domain.Identity.ScimGroupMember", b =>

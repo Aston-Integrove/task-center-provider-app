@@ -10,11 +10,15 @@ COPY src/ src/
 # Seed task definitions are linked into the app from the spec folder (single source of truth).
 COPY specs/004-task-provider-spi/seed/ specs/004-task-provider-spi/seed/
 RUN dotnet publish src/Tcp.Api/Tcp.Api.csproj -c Release -o /app --no-restore /p:UseAppHost=false
+# Folder of the SQLite file; the image has no shell, so create it here. Azure mounts a file share over it.
+RUN mkdir /data
 
 # Chiseled = distroless, non-root (user "app"), no shell. "extra" adds ICU + tzdata.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra AS final
 WORKDIR /app
 COPY --from=build /app .
+# 1654 = the non-root "app" user of the .NET images
+COPY --from=build --chown=1654:1654 /data /data
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     ASPNETCORE_FORWARDEDHEADERS_ENABLED=true \
     DOTNET_gcServer=0

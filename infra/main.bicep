@@ -11,9 +11,6 @@ param location string = 'southafricanorth'
 @description('Object id of the deploying principal (azd sets AZURE_PRINCIPAL_ID).')
 param principalId string
 
-@description('Login/UPN (or app display name) of the deploying principal; set by the preprovision hook.')
-param principalName string
-
 @allowed(['User', 'ServicePrincipal'])
 param principalType string = 'User'
 
@@ -31,9 +28,6 @@ param resourceGroupName string = ''
 
 @description('true = the resource group already exists (e.g. created by an admin); it is used as is and not created or re-tagged. It must be in the same region as "location".')
 param useExistingResourceGroup bool = false
-
-@description('Azure SQL server name (globally unique, lowercase letters, digits and hyphens). Empty = sql-<token>.')
-param sqlServerName string = ''
 
 var tags = { 'azd-env-name': environmentName, app: 'tc-provider' }
 var token = toLower(uniqueString(subscription().id, environmentName, location))
@@ -87,24 +81,25 @@ module vault 'modules/key-vault.bicep' = {
   }
 }
 
-module sql 'modules/sql.bicep' = {
+// Holds the SQLite database file (Azure Files share mounted into the container app).
+module storage 'modules/storage.bicep' = {
   scope: rg
-  name: 'sql'
+  name: 'storage'
   dependsOn: [rgCreate]
-  params: {
-    serverName: empty(sqlServerName) ? 'sql-${token}' : sqlServerName
-    location: location
-    tags: tags
-    adminLogin: principalName
-    adminObjectId: principalId
-    adminPrincipalType: principalType == 'User' ? 'User' : 'Application'
-  }
+  params: { name: 'st${take(token, 22)}', location: location, tags: tags }
 }
 
 module env 'modules/container-apps-env.bicep' = {
   scope: rg
   name: 'cae'
-  params: { name: 'cae-${token}', location: location, tags: tags, logAnalyticsName: logs.outputs.name }
+  params: {
+    name: 'cae-${token}'
+    location: location
+    tags: tags
+    logAnalyticsName: logs.outputs.name
+    storageAccountName: storage.outputs.name
+    shareName: storage.outputs.shareName
+  }
 }
 
 var appName = 'ca-tcp-${take(token, 8)}'
@@ -121,8 +116,7 @@ module app 'modules/container-app.bicep' = {
     pullIdentityId: pullIdentity.outputs.resourceId
     keyVaultName: vault.outputs.name
     keyVaultUri: vault.outputs.uri
-    sqlFqdn: sql.outputs.fqdn
-    sqlDatabaseName: sql.outputs.databaseName
+    storageMountName: env.outputs.storageMountName
     publicBaseUrl: 'https://${appName}.${env.outputs.defaultDomain}'
     minReplicas: minReplicas
   }
@@ -141,9 +135,7 @@ output AZURE_CONTAINER_REGISTRY_ENDPOINT string = registry.outputs.loginServer
 output AZURE_CONTAINER_REGISTRY_NAME string = registry.outputs.name
 output AZURE_KEY_VAULT_NAME string = vault.outputs.name
 output AZURE_KEY_VAULT_URI string = vault.outputs.uri
-output AZURE_SQL_SERVER string = sql.outputs.serverName
-output AZURE_SQL_FQDN string = sql.outputs.fqdn
-output AZURE_SQL_DATABASE string = sql.outputs.databaseName
+output AZURE_STORAGE_ACCOUNT string = storage.outputs.name
 output APP_NAME string = app.outputs.name
 output APP_FQDN string = app.outputs.fqdn
 output PUBLIC_BASE_URL string = 'https://${app.outputs.fqdn}'

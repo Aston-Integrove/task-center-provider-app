@@ -22,6 +22,12 @@ public sealed class DatabaseOptions
 {
     public const string Section = "Database";
     public bool MigrateOnStartup { get; set; }
+
+    /// <summary>
+    /// SQLite journal mode applied at startup (e.g. WAL, DELETE). Empty keeps the file's current mode. WAL needs shared
+    /// memory and does not work on network file systems such as Azure Files (SMB): use DELETE there.
+    /// </summary>
+    public string JournalMode { get; set; } = "";
 }
 
 public sealed class KeyVaultOptions

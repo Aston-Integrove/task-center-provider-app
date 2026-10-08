@@ -15,7 +15,7 @@ flowchart LR
   end
   subgraph AZ["Azure (South Africa North)"]
     APP["Container App: tc-provider<br/>.NET 10 Minimal API"]
-    SQL[(Azure SQL Basic)]
+    SQL[(SQLite file on<br/>Azure Files share)]
     KV[Key Vault]
     LOG[Log Analytics]
   end
@@ -53,7 +53,7 @@ src/
   Tcp.Infrastructure/      # EF Core DbContext, migrations, Key Vault key provider, JWKS cache
 tests/
   Tcp.UnitTests/
-  Tcp.IntegrationTests/    # WebApplicationFactory + Testcontainers (SQL Server 2022)
+  Tcp.IntegrationTests/    # WebApplicationFactory + temporary SQLite files
   Tcp.ContractTests/       # validates responses against contracts/*.yaml|json
 infra/                     # main.bicep, modules/*.bicep, azure.yaml (azd)
 specs/                     # this spec pack
@@ -69,7 +69,7 @@ sequenceDiagram
   participant DS as Destination svc
   participant TS as /oauth/token
   participant SPI as /task-provider/v2
-  participant DB as Azure SQL
+  participant DB as SQLite
   TC->>DS: get destination INTEGROVE_TP
   DS->>TS: POST grant_type=client_credentials (client tc-tech)
   TS-->>DS: access_token (scope spi.tech, 15 min)
@@ -137,20 +137,20 @@ erDiagram
   TaskInstance ||--o{ OperationLog : audit
 ```
 
-Details: `specs/003-scim-provisioning/data-model.md`, `specs/004-task-provider-spi/data-model.md`. Localised texts are stored as JSON columns (`nvarchar(max)` with `ISJSON` check) — simple and adequate for ≤3 languages.
+Details: `specs/003-scim-provisioning/data-model.md`, `specs/004-task-provider-spi/data-model.md`. Localised texts are stored as JSON columns (`TEXT` with a `json_valid` check) — simple and adequate for ≤3 languages.
 
 ## 5. Azure deployment
 
 | Resource | SKU / setting | Est. USD/month* |
 |---|---|---|
-| Container Apps environment + app | Consumption, 0.25 vCPU / 0.5 GiB, min replicas 1, max 2 | 3 – 7 (after free grant) |
-| Azure SQL Database | Basic, 5 DTU, 2 GB, Entra-only auth | ~5 |
+| Container Apps environment + app | Consumption, 0.25 vCPU / 0.5 GiB, min replicas 1, max 1 | 3 – 7 (after free grant) |
+| Storage account (Azure Files share, SQLite file) | Standard LRS, 5 GiB quota | < 1 |
 | Azure Container Registry | Basic | ~5 |
 | Key Vault | Standard | < 1 |
 | Log Analytics | PerGB2018, 30-day retention, daily cap 0.2 GB | 0 – 2 |
-| **Total** | | **≈ 15 – 20** |
+| **Total** | | **≈ 10 – 15** |
 
-\*Estimates at list price; confirm in the Azure Pricing Calculator for South Africa North. Delta pulls every 30 s keep the app warm, so scale-to-zero gives no saving while the destination is enabled — that is also why serverless SQL was rejected (ADR-003).
+\*Estimates at list price; confirm in the Azure Pricing Calculator for South Africa North. Delta pulls every 30 s keep the app warm, so scale-to-zero gives no saving while the destination is enabled. The database is a SQLite file (ADR-011), so the app runs as a single replica.
 
 Ingress: external HTTPS on the default `*.azurecontainerapps.io` FQDN (managed TLS). Custom domain optional. Optional IP restriction on `/scim` and `/task-provider` to SAP BTP/IPS egress ranges (stretch).
 

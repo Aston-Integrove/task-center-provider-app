@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 # Resolves the deploying principal (Entra user or service principal) into azd env values that
-# main.bicep needs for the SQL Entra admin and Key Vault role assignment. Idempotent.
+# main.bicep needs for the Key Vault role assignment. Idempotent.
 $ErrorActionPreference = 'Stop'
 
 function Get-AzdValue([string]$name) {
@@ -20,7 +20,7 @@ if (-not $id -or -not $name -or -not $type) {
         $name = $account.name
         $type = 'User'
     } else {
-        # Service principal (CI): name is the appId; the SQL admin login must be the display name.
+        # Service principal (CI): the account name is the appId.
         $sp = az ad sp show --id $account.name -o json | ConvertFrom-Json
         $id = $sp.id
         $name = $sp.displayName

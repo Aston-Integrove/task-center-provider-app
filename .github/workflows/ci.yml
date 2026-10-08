@@ -24,7 +24,7 @@ jobs:
       - run: dotnet build Tcp.sln --no-restore -c Release
       - name: Unit tests
         run: dotnet test tests/Tcp.UnitTests --no-build -c Release --logger "trx;LogFileName=unit.trx"
-      # Integration tests start a SQL Server 2022 container via Testcontainers (Docker is preinstalled).
+      # Integration tests use temporary SQLite files; no database server or container is needed.
       - name: Integration tests
         run: dotnet test tests/Tcp.IntegrationTests --no-build -c Release --logger "trx;LogFileName=integration.trx"
       - name: Contract tests
@@ -61,7 +61,7 @@ jobs:
       - name: Smoke test /healthz
         run: |
           # No Key Vault in CI: allow an ephemeral token signing key so the Production-mode container can start.
-          docker run -d --name tcp -p 8080:8080 -e OAuth__AllowEphemeralSigningKey=true tcp-api:ci
+          docker run -d --name tcp -p 8080:8080 -e OAuth__AllowEphemeralSigningKey=true -e Database__MigrateOnStartup=true tcp-api:ci
           for i in $(seq 1 30); do
             code=$(curl -s -o /tmp/health.json -w '%{http_code}' http://localhost:8080/healthz || true)
             [ "$code" = "200" ] && break
