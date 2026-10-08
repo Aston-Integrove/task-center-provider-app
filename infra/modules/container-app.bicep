@@ -71,8 +71,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'data'
           storageType: 'AzureFile'
           storageName: storageMountName
-          // uid/gid 1654 = the non-root "app" user in the image. Byte-range locks stay ON so SQLite can lock the file.
-          mountOptions: 'dir_mode=0770,file_mode=0660,uid=1654,gid=1654,mfsymlinks'
+          // uid/gid 1654 = the non-root "app" user in the image. nobrl: SQLite cannot take its locks through SMB
+          // byte-range locking ("database is locked" at startup), so they are off; this is safe only because the app
+          // is limited to one replica (see maxReplicas below) and one process opens the file.
+          mountOptions: 'dir_mode=0770,file_mode=0660,uid=1654,gid=1654,mfsymlinks,nobrl'
         }
       ]
       // SQLite allows one writer process: never more than one replica.
